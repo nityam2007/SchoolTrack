@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #__nuxt {
+  background: #0A0E1A;
+  color: #F1F5F9;
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0E1A;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E2D45;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2A3A55;
+}
+
+@layer components {
+  .st-card {
+    @apply bg-card border border-line rounded-card p-6;
+  }
+  .st-card-tight {
+    @apply bg-card border border-line rounded-card p-4;
+  }
+  .st-input {
+    @apply bg-surface border border-line rounded-ctl px-4 py-2.5 text-ink text-sm w-full outline-none focus:border-accent transition-colors;
+  }
+  .st-label {
+    @apply text-muted text-xs font-semibold uppercase tracking-wider;
+  }
+  .st-h2 {
+    @apply text-2xl font-extrabold tracking-tight;
+  }
+  .st-divider {
+    @apply border-t border-line;
+  }
+}
