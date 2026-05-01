@@ -67,3 +67,5 @@ AIPROMPT/
 |---|---|
 | [pricing.md](./features/pricing.md) | Credit-based pricing system |
 | [whatsapp.md](./features/whatsapp.md) | WhatsApp notification integration |
+| [report-cards.md](./features/report-cards.md) | Subjects, exams, marks, A4 print view |
+| [supabase.md](./features/supabase.md) | Schema, RLS, Auth, deployment runbook |

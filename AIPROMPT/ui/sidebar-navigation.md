@@ -1,61 +1,67 @@
 # Module: Sidebar & Navigation
 
-> **Component:** `Sidebar`  
-> **Position:** Fixed left, 220px wide, full height
+> **Component:** [`components/AppSidebar.vue`](../../components/AppSidebar.vue)
+> **Width:** 220px fixed left, full height
+> **Source of menu:** [`composables/useNav.ts`](../../composables/useNav.ts)
 
-## UI Structure
+## Structure
 
 ```
 ┌──────────────────┐
-│ 🏫 SchoolTrack   │  ← Logo
+│ 🏫 SchoolTrack   │  ← Logo (links to /dashboard)
 │                  │
-│  🏠 Dashboard    │  ← Menu items
-│  📋 Attendance   │     (role-based)
-│  👨‍🏫 Teachers     │
-│  👩‍🎓 Students     │
-│  📅 Holidays     │
-│  💬 Messages     │
-│  📈 Reports      │
+│  🏠 Dashboard    │  ← role-based items
+│  📋 Attendance   │
+│  …               │
 │                  │
 │  ┌──────────────┐│
-│  │ User Name    ││  ← User card
+│  │ User Name    ││  ← User card (auth.user.name)
 │  │ Role Label   ││
 │  └──────────────┘│
-│  [ Sign Out     ]│  ← Logout
+│  [ Sign Out     ]│
 └──────────────────┘
 ```
 
-## Menu Items by Role
+## Menu by Role
 
 ### Super Admin
-| Icon | Key | Label |
-|---|---|---|
-| 🏠 | `dashboard` | Dashboard |
-| 🏫 | `schools` | Schools |
-| 💳 | `credits` | Credits |
-| 📊 | `analytics` | Analytics |
+| Icon | Key | Label | Route |
+|---|---|---|---|
+| `pi-home`        | dashboard  | Dashboard | `/dashboard` |
+| `pi-building`    | schools    | Schools   | `/schools`   |
+| `pi-credit-card` | credits    | Credits   | `/credits`   |
+| `pi-chart-bar`   | analytics  | Analytics | `/analytics` |
 
 ### Principal (School Admin)
-| Icon | Key | Label |
-|---|---|---|
-| 🏠 | `dashboard` | Dashboard |
-| 📋 | `attendance` | Attendance |
-| 👨‍🏫 | `teachers` | Teachers |
-| 👩‍🎓 | `students` | Students |
-| 📅 | `holidays` | Holidays |
-| 💬 | `messages` | Messages |
-| 📈 | `reports` | Reports |
+| Icon | Key | Label | Route |
+|---|---|---|---|
+| `pi-home`         | dashboard      | Dashboard      | `/dashboard` |
+| `pi-list`         | attendance     | Attendance     | `/attendance` |
+| `pi-id-card`      | teachers       | Teachers       | `/teachers` |
+| `pi-users`        | students       | Students       | `/students` |
+| `pi-calendar`     | holidays       | Holidays       | `/holidays` |
+| `pi-comments`     | messages       | Messages       | `/messages` |
+| `pi-chart-line`   | reports        | Reports        | `/reports` |
+| `pi-file`         | reportcards    | Report Cards   | `/report-cards` |
 
 ### Teacher
-| Icon | Key | Label |
-|---|---|---|
-| 🏠 | `dashboard` | Dashboard |
-| ✅ | `markattendance` | Mark Attendance |
-| 📋 | `myclass` | My Class |
+| Icon | Key | Label | Route |
+|---|---|---|---|
+| `pi-home`          | dashboard       | Dashboard         | `/dashboard` |
+| `pi-check-square`  | markattendance  | Mark Attendance   | `/mark-attendance` |
+| `pi-list`          | myclass         | My Class          | `/my-class` |
+| `pi-file`          | reportcards     | Report Cards      | `/report-cards` |
 
 ## Active State
 
-- Background: `accentGlow` (`#3B82F640`)
-- Text color: `accent` (`#3B82F6`)
-- Border: `accent` at 30% opacity
-- Font weight: 700
+Tailwind classes (see `AppSidebar.vue`):
+- Active:  `bg-accentGlow text-accent border-accent/30 font-bold`
+- Idle:    `text-light border-transparent hover:bg-card hover:text-ink`
+
+Tokens are defined in [`tailwind.config.js`](../../tailwind.config.js).
+
+## Top Nav
+
+[`components/AppTopNav.vue`](../../components/AppTopNav.vue) renders a
+sticky bar above content with: page title, optional school name, search
+input, credits badge (Principal only), notification icon, user menu.

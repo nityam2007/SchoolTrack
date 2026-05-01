@@ -1,62 +1,51 @@
-# Module: Auth — Login Screen
+# Module: Login & Authentication
 
-> **File:** `LoginScreen` component  
-> **Route:** `/` (default when not logged in)
+> **Route:** `/login`
+> **Page:** [`pages/login.vue`](../../pages/login.vue)
+> **Layout:** [`layouts/auth.vue`](../../layouts/auth.vue)
+> **Store:** [`stores/auth.ts`](../../stores/auth.ts)
+> **Guard:** [`middleware/auth.global.ts`](../../middleware/auth.global.ts)
 
-## Purpose
-
-Role-based login with demo account quick-fill. Validates credentials against seed data.
-
-## UI Structure
+## Flow
 
 ```
-┌──────────────────────────────────────┐
-│         🏫 SchoolTrack               │
-│   "Attendance management, reimagined"│
-├──────────────────────────────────────┤
-│  LOGIN AS                            │
-│  [🔑 Super Admin] [🏫 Principal] [👩‍🏫 Teacher] │
-│                                      │
-│  ┌─ Demo Accounts (click to fill) ─┐│
-│  │  Platform Admin  admin@...       ││
-│  │  Greenwood       principal@...   ││
-│  └──────────────────────────────────┘│
-│                                      │
-│  [ Email address          ]          │
-│  [ Password          👁   ]          │
-│                                      │
-│  ⚠ Error message (if any)           │
-│                                      │
-│  [ Sign In →                ]        │
-└──────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  ┌─────────┐                                            │
+│  │   🏫    │  SchoolTrack — Attendance + Report Cards   │
+│  └─────────┘                                            │
+│                                                         │
+│  Demo accounts (click to fill)                          │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │  Platform Admin              [Super Admin]      │    │
+│  │  Greenwood Academy           [Principal]        │    │
+│  │  Ms. Priya Sharma (Grade 5A) [Teacher]          │    │
+│  └─────────────────────────────────────────────────┘    │
+│                                                         │
+│  [Email]                                                │
+│  [Password ████████▾]                                   │
+│                                                         │
+│  [ Sign In  → ]                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Fields
+The role is **not** picked manually. Supabase Auth identifies the user and
+the linked `profiles` row dictates role/scope.
 
-| Field | Type | Required |
-|---|---|---|
-| Role | Tag selector (3 options) | Yes |
-| Email | Text input | Yes |
-| Password | Password + show/hide toggle | Yes |
+## Wire-up
 
-## Logic
+1. User clicks Sign In → `auth.login(email, password)` → `supabase.auth.signInWithPassword(...)`.
+2. On success, `auth.refresh()` reads `public.profiles` and builds an `AuthUser`.
+3. `plugins/db-loader.client.ts` watches `auth.isAuthenticated` and triggers `db.loadAll()`.
+4. The global middleware redirects to `/dashboard`.
 
-| Role | Lookup | Check |
-|---|---|---|
-| Super Admin | Hardcoded `admin@schooltrack.in` / `admin123` | Exact match |
-| Principal | `schools.find(s => s.adminEmail === email && s.adminPass === pass)` | + `school.active === true` |
-| Teacher | `teachers.find(t => t.email === email && t.pass === pass)` | Exact match |
+## Errors
 
-## Error States
+`auth.error` is bound to `<Message severity="error">`. Supabase returns:
+- `Invalid login credentials` — wrong email/password.
+- `Email not confirmed` — only if `email_confirm` was skipped during seed
+  (the seed script sets it true).
 
-- `"Invalid Super Admin credentials."`
-- `"No school account found with these credentials."`
-- `"This school account has been disabled."`
-- `"No teacher account found with these credentials."`
+## Sign Out
 
-## On Success
-
-Sets `user` object:
-```
-{ role, email, name, schoolId, teacherId?, classId? }
-```
+Top-nav user menu → Sign Out → `auth.logout()` →
+`supabase.auth.signOut()` → guard redirects to `/login`.

@@ -22,11 +22,13 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { key: 'holidays', label: 'Holidays', icon: 'pi pi-calendar', to: '/holidays' },
     { key: 'messages', label: 'Messages', icon: 'pi pi-comments', to: '/messages' },
     { key: 'reports', label: 'Reports', icon: 'pi pi-chart-line', to: '/reports' },
+    { key: 'reportcards', label: 'Report Cards', icon: 'pi pi-file', to: '/report-cards' },
   ],
   teacher: [
     { key: 'dashboard', label: 'Dashboard', icon: 'pi pi-home', to: '/dashboard' },
     { key: 'markattendance', label: 'Mark Attendance', icon: 'pi pi-check-square', to: '/mark-attendance' },
     { key: 'myclass', label: 'My Class', icon: 'pi pi-list', to: '/my-class' },
+    { key: 'reportcards', label: 'Report Cards', icon: 'pi pi-file', to: '/report-cards' },
   ],
 }
 

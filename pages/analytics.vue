@@ -9,6 +9,20 @@ const totals = computed(() => {
   const rate = total ? Math.round((present / total) * 100) : 0
   return { present, absent, total, rate }
 })
+
+const bySchool = computed(() =>
+  db.schools.map((s) => {
+    const att = db.attendance.filter((a) => a.school_id === s.id)
+    const present = att.filter((a) => a.status === 'present').length
+    return {
+      id: s.id,
+      name: s.name,
+      city: s.city,
+      records: att.length,
+      rate: att.length ? Math.round((present / att.length) * 100) : 0,
+    }
+  }),
+)
 </script>
 
 <template>
@@ -22,23 +36,17 @@ const totals = computed(() => {
     </div>
     <div class="st-card">
       <p class="font-bold mb-4">Attendance by School</p>
-      <div v-for="s in db.schools" :key="s.id" class="mb-5">
+      <div v-for="s in bySchool" :key="s.id" class="mb-5">
         <div class="flex items-center justify-between mb-1.5">
           <div>
             <span class="font-semibold">{{ s.name }}</span>
             <span class="text-muted text-xs ml-2">{{ s.city }}</span>
           </div>
+          <span :class="s.rate >= 75 ? 'text-ok' : 'text-warn'" class="font-bold text-sm">
+            {{ s.records ? `${s.rate}%` : '—' }}
+          </span>
         </div>
-        <ProgressBar
-          :value="
-            (() => {
-              const att = db.attendance.filter((a) => a.schoolId === s.id)
-              const present = att.filter((a) => a.status === 'present').length
-              return att.length ? Math.round((present / att.length) * 100) : 0
-            })()
-          "
-          class="h-1.5"
-        />
+        <ProgressBar :value="s.rate" class="h-1.5" />
       </div>
     </div>
   </div>

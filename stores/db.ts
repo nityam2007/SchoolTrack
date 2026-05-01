@@ -1,118 +1,191 @@
 import { defineStore } from 'pinia'
-import type { Db, School, Class, Teacher, Student, Attendance, Holiday, Message } from '~/types/database'
+import type {
+  Attendance, Class, Exam, Holiday, Marks, Message, School, Student, Subject, Teacher,
+} from '~/types/database'
 
-const SEED: Db = {
-  schools: [
-    { id: 'SCH001', name: 'Greenwood Academy', city: 'Mumbai', credits: 420, students: 312, active: true, adminEmail: 'principal@greenwood.edu', adminPass: 'school123' },
-    { id: 'SCH002', name: 'Sunrise Public School', city: 'Delhi', credits: 88, students: 198, active: true, adminEmail: 'principal@sunrise.edu', adminPass: 'sunrise123' },
-    { id: 'SCH003', name: 'Blue Ridge International', city: 'Bangalore', credits: 650, students: 445, active: true, adminEmail: 'principal@blueridge.edu', adminPass: 'blueridge123' },
-  ],
-  classes: [
-    { id: 'CLS001', schoolId: 'SCH001', name: 'Grade 5A', section: 'A', grade: 5 },
-    { id: 'CLS002', schoolId: 'SCH001', name: 'Grade 5B', section: 'B', grade: 5 },
-    { id: 'CLS003', schoolId: 'SCH001', name: 'Grade 6A', section: 'A', grade: 6 },
-  ],
-  teachers: [
-    { id: 'T001', schoolId: 'SCH001', name: 'Ms. Priya Sharma', email: 'priya@greenwood.edu', pass: 'teacher123', classId: 'CLS001', phone: '+919876543210' },
-    { id: 'T002', schoolId: 'SCH001', name: 'Mr. Rahul Mehta', email: 'rahul@greenwood.edu', pass: 'rahul123', classId: 'CLS002', phone: '+919876543211' },
-    { id: 'T003', schoolId: 'SCH001', name: 'Ms. Anita Roy', email: 'anita@greenwood.edu', pass: 'anita123', classId: 'CLS003', phone: '+919876543212' },
-  ],
-  students: [
-    { id: 'S001', schoolId: 'SCH001', classId: 'CLS001', name: 'Aarav Patel', roll: '01', parentPhone: '+919800001111' },
-    { id: 'S002', schoolId: 'SCH001', classId: 'CLS001', name: 'Diya Singh', roll: '02', parentPhone: '+919800001112' },
-    { id: 'S003', schoolId: 'SCH001', classId: 'CLS001', name: 'Kabir Sharma', roll: '03', parentPhone: '+919800001113' },
-    { id: 'S004', schoolId: 'SCH001', classId: 'CLS001', name: 'Meera Joshi', roll: '04', parentPhone: '+919800001114' },
-    { id: 'S005', schoolId: 'SCH001', classId: 'CLS001', name: 'Rohan Gupta', roll: '05', parentPhone: '+919800001115' },
-    { id: 'S006', schoolId: 'SCH001', classId: 'CLS001', name: 'Sia Kumar', roll: '06', parentPhone: '+919800001116' },
-    { id: 'S007', schoolId: 'SCH001', classId: 'CLS002', name: 'Aditya Nair', roll: '01', parentPhone: '+919800002221' },
-    { id: 'S008', schoolId: 'SCH001', classId: 'CLS002', name: 'Pooja Iyer', roll: '02', parentPhone: '+919800002222' },
-    { id: 'S009', schoolId: 'SCH001', classId: 'CLS002', name: 'Vikram Das', roll: '03', parentPhone: '+919800002223' },
-    { id: 'S010', schoolId: 'SCH001', classId: 'CLS003', name: 'Nisha Verma', roll: '01', parentPhone: '+919800003331' },
-    { id: 'S011', schoolId: 'SCH001', classId: 'CLS003', name: 'Arjun Bose', roll: '02', parentPhone: '+919800003332' },
-  ],
-  attendance: [
-    { id: 'A001', schoolId: 'SCH001', classId: 'CLS001', studentId: 'S001', date: '2026-03-04', status: 'present', teacherId: 'T001', photo: true },
-    { id: 'A002', schoolId: 'SCH001', classId: 'CLS001', studentId: 'S002', date: '2026-03-04', status: 'absent', teacherId: 'T001', photo: true },
-    { id: 'A003', schoolId: 'SCH001', classId: 'CLS001', studentId: 'S003', date: '2026-03-04', status: 'present', teacherId: 'T001', photo: true },
-    { id: 'A004', schoolId: 'SCH001', classId: 'CLS001', studentId: 'S004', date: '2026-03-04', status: 'present', teacherId: 'T001', photo: true },
-    { id: 'A005', schoolId: 'SCH001', classId: 'CLS001', studentId: 'S005', date: '2026-03-04', status: 'absent', teacherId: 'T001', photo: true },
-    { id: 'A006', schoolId: 'SCH001', classId: 'CLS001', studentId: 'S006', date: '2026-03-04', status: 'present', teacherId: 'T001', photo: true },
-  ],
-  holidays: [
-    { id: 'H001', schoolId: 'SCH001', date: '2026-03-25', title: 'Holi' },
-    { id: 'H002', schoolId: 'SCH001', date: '2026-04-14', title: 'Dr. Ambedkar Jayanti' },
-  ],
-  messages: [
-    { id: 'M001', schoolId: 'SCH001', studentName: 'Diya Singh', parentPhone: '+919800001112', date: '2026-03-04 09:15', status: 'delivered' },
-    { id: 'M002', schoolId: 'SCH001', studentName: 'Rohan Gupta', parentPhone: '+919800001115', date: '2026-03-04 09:16', status: 'delivered' },
-  ],
+interface DbState {
+  schools: School[]
+  classes: Class[]
+  teachers: Teacher[]
+  students: Student[]
+  attendance: Attendance[]
+  holidays: Holiday[]
+  messages: Message[]
+  subjects: Subject[]
+  exams: Exam[]
+  marks: Marks[]
+  loaded: boolean
+  loading: boolean
+  error: string
 }
 
+const blankState = (): DbState => ({
+  schools: [], classes: [], teachers: [], students: [],
+  attendance: [], holidays: [], messages: [],
+  subjects: [], exams: [], marks: [],
+  loaded: false, loading: false, error: '',
+})
+
 export const useDbStore = defineStore('db', {
-  state: (): Db => ({ ...SEED }),
+  state: blankState,
 
   getters: {
-    schoolsForUser: (state) => (schoolId: string | null) =>
-      schoolId ? state.schools.filter((s) => s.id === schoolId) : state.schools,
-    classesForSchool: (state) => (schoolId: string) =>
-      state.classes.filter((c) => c.schoolId === schoolId),
-    teachersForSchool: (state) => (schoolId: string) =>
-      state.teachers.filter((t) => t.schoolId === schoolId),
-    studentsForSchool: (state) => (schoolId: string) =>
-      state.students.filter((s) => s.schoolId === schoolId),
-    studentsForClass: (state) => (classId: string) =>
-      state.students.filter((s) => s.classId === classId),
-    attendanceForSchool: (state) => (schoolId: string) =>
-      state.attendance.filter((a) => a.schoolId === schoolId),
-    holidaysForSchool: (state) => (schoolId: string) =>
-      state.holidays.filter((h) => h.schoolId === schoolId),
-    messagesForSchool: (state) => (schoolId: string) =>
-      state.messages.filter((m) => m.schoolId === schoolId),
+    classesForSchool: (s) => (id: string) => s.classes.filter((c) => c.school_id === id),
+    teachersForSchool: (s) => (id: string) => s.teachers.filter((t) => t.school_id === id),
+    studentsForSchool: (s) => (id: string) => s.students.filter((x) => x.school_id === id),
+    studentsForClass:  (s) => (cid: string) => s.students.filter((x) => x.class_id === cid),
+    attendanceForSchool: (s) => (id: string) => s.attendance.filter((a) => a.school_id === id),
+    holidaysForSchool: (s) => (id: string) => s.holidays.filter((h) => h.school_id === id),
+    messagesForSchool: (s) => (id: string) => s.messages.filter((m) => m.school_id === id),
+    subjectsForSchool: (s) => (id: string) => s.subjects.filter((x) => x.school_id === id),
+    examsForSchool:    (s) => (id: string) => s.exams.filter((e) => e.school_id === id),
+    examsForClass:     (s) => (cid: string) => s.exams.filter((e) => e.class_id === cid),
+    marksForExam:      (s) => (eid: string) => s.marks.filter((m) => m.exam_id === eid),
+    marksForExamStudent: (s) => (eid: string, sid: string) =>
+      s.marks.filter((m) => m.exam_id === eid && m.student_id === sid),
   },
 
   actions: {
-    addSchool(school: School) {
-      this.schools.push(school)
+    /** Load every collection visible to the current user (RLS enforced). */
+    async loadAll() {
+      if (this.loading) return
+      this.loading = true
+      this.error = ''
+      const supabase = useSb()
+      const tables = [
+        'schools', 'classes', 'teachers', 'students',
+        'attendance', 'holidays', 'messages',
+        'subjects', 'exams', 'marks',
+      ] as const
+      try {
+        const results = await Promise.all(
+          tables.map((t) => supabase.from(t).select('*').then((r) => ({ t, r }))),
+        )
+        for (const { t, r } of results) {
+          if (r.error) throw new Error(`${t}: ${r.error.message}`)
+          ;(this as unknown as Record<string, unknown[]>)[t] = (r.data ?? []) as unknown[]
+        }
+        this.loaded = true
+      } catch (e) {
+        this.error = (e as Error).message
+      } finally {
+        this.loading = false
+      }
     },
-    updateSchool(id: string, patch: Partial<School>) {
+
+    reset() { Object.assign(this, blankState()) },
+
+    // ── Schools ────────────────────────────────────────────────────────────
+    async addSchool(school: Omit<School, 'created_at'>) {
+      const supabase = useSb()
+      const { error } = await supabase.from('schools').insert(school)
+      if (error) throw error
+      this.schools.push(school as School)
+    },
+    async updateSchool(id: string, patch: Partial<School>) {
+      const supabase = useSb()
+      const { error } = await supabase.from('schools').update(patch).eq('id', id)
+      if (error) throw error
       const i = this.schools.findIndex((s) => s.id === id)
       if (i >= 0) this.schools[i] = { ...this.schools[i], ...patch }
     },
-    addStudent(student: Student) {
+    async topUpCredits(school_id: string, amount: number) {
+      const s = this.schools.find((x) => x.id === school_id)
+      if (!s) return
+      await this.updateSchool(school_id, { credits: s.credits + amount })
+    },
+
+    // ── Students ───────────────────────────────────────────────────────────
+    async addStudent(student: Student) {
+      const supabase = useSb()
+      const { error } = await supabase.from('students').insert(student)
+      if (error) throw error
       this.students.push(student)
     },
-    removeStudent(id: string) {
+    async removeStudent(id: string) {
+      const supabase = useSb()
+      const { error } = await supabase.from('students').delete().eq('id', id)
+      if (error) throw error
       this.students = this.students.filter((s) => s.id !== id)
     },
-    addTeacher(teacher: Teacher) {
+
+    // ── Teachers ───────────────────────────────────────────────────────────
+    async addTeacher(teacher: Teacher) {
+      const supabase = useSb()
+      const { error } = await supabase.from('teachers').insert(teacher)
+      if (error) throw error
       this.teachers.push(teacher)
     },
-    addClass(c: Class) {
-      this.classes.push(c)
-    },
-    addHoliday(h: Holiday) {
+
+    // ── Holidays ───────────────────────────────────────────────────────────
+    async addHoliday(h: Holiday) {
+      const supabase = useSb()
+      const { error } = await supabase.from('holidays').insert(h)
+      if (error) throw error
       this.holidays.push(h)
     },
-    removeHoliday(id: string) {
+    async removeHoliday(id: string) {
+      const supabase = useSb()
+      const { error } = await supabase.from('holidays').delete().eq('id', id)
+      if (error) throw error
       this.holidays = this.holidays.filter((h) => h.id !== id)
     },
-    upsertAttendance(record: Attendance) {
-      const i = this.attendance.findIndex(
-        (a) => a.studentId === record.studentId && a.date === record.date,
-      )
-      if (i >= 0) this.attendance[i] = record
-      else this.attendance.push(record)
+
+    // ── Attendance ─────────────────────────────────────────────────────────
+    async upsertAttendanceBatch(records: Attendance[]) {
+      if (!records.length) return
+      const supabase = useSb()
+      const { error } = await supabase
+        .from('attendance')
+        .upsert(records, { onConflict: 'student_id,date' })
+      if (error) throw error
+      for (const r of records) {
+        const i = this.attendance.findIndex(
+          (a) => a.student_id === r.student_id && a.date === r.date,
+        )
+        if (i >= 0) this.attendance[i] = r
+        else this.attendance.push(r)
+      }
     },
-    addMessage(m: Message) {
-      this.messages.push(m)
+
+    // ── Messages ───────────────────────────────────────────────────────────
+    async addMessages(msgs: Message[]) {
+      if (!msgs.length) return
+      const supabase = useSb()
+      const { error } = await supabase.from('messages').insert(msgs)
+      if (error) throw error
+      this.messages.push(...msgs)
     },
-    deductCredits(schoolId: string, amount: number) {
-      const s = this.schools.find((x) => x.id === schoolId)
-      if (s) s.credits = Math.max(0, s.credits - amount)
+
+    // ── Exams / Marks ──────────────────────────────────────────────────────
+    async addExam(exam: Exam) {
+      const supabase = useSb()
+      const { error } = await supabase.from('exams').insert(exam)
+      if (error) throw error
+      this.exams.push(exam)
     },
-    topUpCredits(schoolId: string, amount: number) {
-      const s = this.schools.find((x) => x.id === schoolId)
-      if (s) s.credits += amount
+    async updateExam(id: string, patch: Partial<Exam>) {
+      const supabase = useSb()
+      const { error } = await supabase.from('exams').update(patch).eq('id', id)
+      if (error) throw error
+      const i = this.exams.findIndex((e) => e.id === id)
+      if (i >= 0) this.exams[i] = { ...this.exams[i], ...patch }
+    },
+    async upsertMarks(rows: Omit<Marks, 'id' | 'updated_at'>[]) {
+      if (!rows.length) return
+      const supabase = useSb()
+      const { error, data } = await supabase
+        .from('marks')
+        .upsert(rows, { onConflict: 'exam_id,student_id,subject_id' })
+        .select()
+      if (error) throw error
+      for (const r of (data ?? []) as Marks[]) {
+        const i = this.marks.findIndex(
+          (m) => m.exam_id === r.exam_id && m.student_id === r.student_id && m.subject_id === r.subject_id,
+        )
+        if (i >= 0) this.marks[i] = r
+        else this.marks.push(r)
+      }
     },
   },
 })

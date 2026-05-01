@@ -13,19 +13,22 @@ const records = computed(() => {
   if (!auth.schoolId) return []
   return db.attendance.filter(
     (a) =>
-      a.schoolId === auth.schoolId &&
+      a.school_id === auth.schoolId &&
       a.date === date.value &&
-      (selClass.value === 'all' || a.classId === selClass.value),
+      (selClass.value === 'all' || a.class_id === selClass.value),
   )
 })
 
 const enriched = computed(() =>
   records.value.map((a) => ({
     ...a,
-    studentName: db.students.find((s) => s.id === a.studentId)?.name ?? a.studentId,
-    className: db.classes.find((c) => c.id === a.classId)?.name ?? a.classId,
+    student_name: db.students.find((s) => s.id === a.student_id)?.name ?? a.student_id,
+    class_name: db.classes.find((c) => c.id === a.class_id)?.name ?? a.class_id,
   })),
 )
+
+const present = computed(() => enriched.value.filter((a) => a.status === 'present').length)
+const absent = computed(() => enriched.value.filter((a) => a.status === 'absent').length)
 </script>
 
 <template>
@@ -40,25 +43,21 @@ const enriched = computed(() =>
         option-label="name"
         class="w-48"
       />
+      <Tag :value="`${present} Present`" severity="success" />
+      <Tag :value="`${absent} Absent`" severity="danger" />
     </div>
     <div class="st-card">
       <DataTable :value="enriched" responsive-layout="scroll" striped-rows>
-        <Column field="studentName" header="Student" sortable />
-        <Column field="className" header="Class" sortable />
+        <Column field="student_name" header="Student" sortable />
+        <Column field="class_name" header="Class" sortable />
         <Column header="Status">
           <template #body="{ data }">
-            <Tag
-              :value="data.status"
-              :severity="data.status === 'present' ? 'success' : 'danger'"
-            />
+            <Tag :value="data.status" :severity="data.status === 'present' ? 'success' : 'danger'" />
           </template>
         </Column>
         <Column header="Photo">
           <template #body="{ data }">
-            <Tag
-              :value="data.photo ? 'Saved' : 'Missing'"
-              :severity="data.photo ? 'success' : 'danger'"
-            />
+            <Tag :value="data.photo ? 'Saved' : 'Missing'" :severity="data.photo ? 'success' : 'danger'" />
           </template>
         </Column>
       </DataTable>

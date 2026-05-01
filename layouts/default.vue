@@ -11,5 +11,7 @@ const auth = useAuthStore()
         <slot />
       </main>
     </div>
+    <Toast position="top-right" />
+    <ConfirmDialog />
   </div>
 </template>
