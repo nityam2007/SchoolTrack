@@ -41,14 +41,14 @@ const submit = async () => {
 
 <template>
   <div class="grid lg:grid-cols-[1.1fr_1fr] min-h-screen w-full">
-    <!-- Brand panel (hidden on mobile) -->
+    <!-- Brand panel (hidden on mobile). All decoration is pointer-events:none so it can never block the form. -->
     <section class="hidden lg:flex relative overflow-hidden flex-col justify-between p-12 bg-gradient-to-br from-[#0d1530] via-[#0a1024] to-[#0a0e1a]">
       <div
-        class="absolute -top-32 -left-24 w-[480px] h-[480px] rounded-full blur-3xl opacity-30"
+        class="absolute -top-32 -left-24 w-[480px] h-[480px] rounded-full blur-3xl opacity-30 pointer-events-none"
         style="background: radial-gradient(closest-side, #3B82F6, transparent);"
       />
       <div
-        class="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-25"
+        class="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-25 pointer-events-none"
         style="background: radial-gradient(closest-side, #8B5CF6, transparent);"
       />
 

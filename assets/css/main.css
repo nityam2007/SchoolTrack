@@ -2,15 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+html {
   color-scheme: dark;
-  --bg-grad:
-    radial-gradient(1200px 600px at 0% -10%, rgba(59,130,246,0.06), transparent 60%),
-    radial-gradient(800px 500px at 100% 0%,  rgba(139,92,246,0.05), transparent 60%);
-}
-
-html, body, #__nuxt {
   background: #080B14;
+}
+body, #__nuxt {
+  background:
+    radial-gradient(1200px 600px at 0% -10%, rgba(59,130,246,0.06), transparent 60%),
+    radial-gradient(800px 500px at 100% 0%,  rgba(139,92,246,0.05), transparent 60%),
+    #080B14;
   color: #F1F5F9;
   font-family: 'Inter', 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: 'cv11', 'ss01', 'ss03';
@@ -20,15 +20,12 @@ html, body, #__nuxt {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-body { background-image: var(--bg-grad); }
 
-/* Subtle dark scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #1F2A44; border-radius: 8px; border: 2px solid #080B14; }
 ::-webkit-scrollbar-thumb:hover { background: #2A3553; }
 
-/* Selection */
 ::selection { background: rgba(59,130,246,0.35); color: #fff; }
 
 @layer components {
@@ -42,8 +39,7 @@ body { background-image: var(--bg-grad); }
     @apply bg-card border border-line rounded-card p-4 shadow-card;
   }
   .st-input {
-    @apply bg-surface border border-line rounded-ctl px-4 py-2.5 text-ink text-sm w-full outline-none transition-all;
-    @apply focus:border-accent/60 focus:shadow-glow;
+    @apply bg-surface border border-line rounded-ctl px-4 py-2.5 text-ink text-sm w-full outline-none transition-colors;
   }
   .st-label {
     @apply text-muted text-[11px] font-semibold uppercase tracking-[0.08em];
@@ -53,29 +49,17 @@ body { background-image: var(--bg-grad); }
   .st-h3 { @apply text-base font-bold tracking-tight; }
   .st-divider { @apply border-t border-line; }
 
-  /* Pill-style status chip */
   .st-chip {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider;
   }
   .st-chip-dot {
     @apply w-1.5 h-1.5 rounded-full;
   }
-
-  /* Animated active row */
-  .st-row {
-    @apply rounded-ctl px-4 py-3 border border-transparent transition-all;
-  }
-  .st-row-active { @apply bg-accentSoft border-accent/30 text-accent; }
 }
 
 /* Print: hide app chrome, white background */
 @media print {
-  .app-dark, html, body, #__nuxt { background: #fff !important; color: #1a1a2e !important; }
+  html, body, #__nuxt { background: #fff !important; color: #1a1a2e !important; }
   aside, header { display: none !important; }
   main { padding: 0 !important; }
 }
-
-/* Page transition (Nuxt) */
-.page-enter-active, .page-leave-active { transition: opacity 0.18s ease, transform 0.18s ease; }
-.page-enter-from { opacity: 0; transform: translateY(6px); }
-.page-leave-to   { opacity: 0; transform: translateY(-4px); }

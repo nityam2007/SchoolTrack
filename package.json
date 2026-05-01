@@ -14,8 +14,8 @@
   "dependencies": {
     "@nuxtjs/supabase": "^1.4.5",
     "@pinia/nuxt": "^0.5.5",
-    "@primevue/nuxt-module": "^4.2.4",
     "@primeuix/themes": "^1.0.0",
+    "@primevue/nuxt-module": "^4.2.4",
     "@supabase/supabase-js": "^2.46.1",
     "dotenv": "^16.4.7",
     "nuxt": "^3.14.1592",
@@ -30,6 +30,7 @@
     "@types/node": "^22.9.3",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
+    "puppeteer-core": "^24.42.0",
     "tailwindcss": "^3.4.15",
     "tailwindcss-primeui": "^0.3.4",
     "typescript": "^5.6.3",
