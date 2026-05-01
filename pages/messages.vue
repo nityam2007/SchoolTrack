@@ -1,33 +1,32 @@
 <script setup lang="ts">
-import type { Message } from '~/types/database'
+import type { Message, MessageStatus } from '~/types/database'
 
 const auth = useAuthStore()
 const db = useDbStore()
 const toast = useToast()
 
+const STATUS_TONE: Record<MessageStatus, { chip: string; dot: string }> = {
+  delivered: { chip: 'bg-ok/10 text-ok',         dot: 'bg-ok' },
+  failed:    { chip: 'bg-danger/10 text-danger', dot: 'bg-danger' },
+  queued:    { chip: 'bg-warn/10 text-warn',     dot: 'bg-warn' },
+}
+const fmtSentAt = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+
 const filter = ref<'class' | 'school'>('class')
 const selClass = ref<string>('')
 
-const school = computed(() =>
-  auth.schoolId ? db.schools.find((s) => s.id === auth.schoolId) : null,
-)
 const classes = computed(() => (auth.schoolId ? db.classesForSchool(auth.schoolId) : []))
 
 watchEffect(() => {
   if (!selClass.value && classes.value.length) selClass.value = classes.value[0].id
 })
 
-// Today's absent students for the school.
+// Today's absent students, optionally filtered to one class.
 const absentees = computed(() => {
-  if (!auth.schoolId) return []
-  const today = new Date().toISOString().split('T')[0]
-  const absentRecords = db.attendance.filter(
-    (a) => a.school_id === auth.schoolId && a.date === today && a.status === 'absent',
-  )
-  const candidates = absentRecords.map((a) => db.students.find((s) => s.id === a.student_id)).filter(Boolean) as NonNullable<ReturnType<typeof db.students.find>>[]
+  const all = db.absenteesToday
   return filter.value === 'school'
-    ? candidates
-    : candidates.filter((s) => s.class_id === selClass.value)
+    ? all
+    : all.filter((s) => db.studentMap.get(s.student_id)?.class_id === selClass.value)
 })
 
 const messages = computed(() =>
@@ -36,8 +35,8 @@ const messages = computed(() =>
 
 const sending = ref(false)
 const send = async () => {
-  if (!school.value || !auth.schoolId) return
-  if (school.value.credits < absentees.value.length) {
+  if (!db.activeSchool || !auth.schoolId) return
+  if (db.activeSchool.credits < absentees.value.length) {
     toast.add({ severity: 'warn', summary: 'Insufficient credits', life: 3000 })
     return
   }
@@ -45,16 +44,18 @@ const send = async () => {
   const sid = auth.schoolId
   const now = new Date()
   const newMsgs: Message[] = absentees.value.map((s) => ({
-    id: `M${Date.now().toString(36).toUpperCase()}-${s.id}`,
+    id: `M${Date.now().toString(36).toUpperCase()}-${s.student_id}`,
     school_id: sid,
-    student_name: s.name,
+    student_name: s.student_name,
     parent_phone: s.parent_phone,
     date: now.toISOString(),
     status: 'delivered',
   }))
   try {
-    await db.addMessages(newMsgs)
-    await db.updateSchool(sid, { credits: school.value.credits - newMsgs.length })
+    await Promise.all([
+      db.addMessages(newMsgs),
+      db.updateSchool(sid, { credits: db.activeSchool.credits - newMsgs.length }),
+    ])
     toast.add({ severity: 'success', summary: `Sent to ${newMsgs.length} parent(s)`, life: 2500 })
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
@@ -73,7 +74,7 @@ const send = async () => {
         <span class="font-bold">Send Absence Notifications</span>
         <span class="text-sm">
           <span class="text-muted">Credits: </span>
-          <span class="text-ok font-bold">{{ school?.credits ?? 0 }}</span>
+          <span class="text-ok font-bold">{{ db.activeSchool?.credits ?? 0 }}</span>
         </span>
       </div>
 
@@ -110,21 +111,41 @@ const send = async () => {
       </div>
     </div>
 
-    <div class="st-card">
-      <p class="font-bold mb-3">Message Log</p>
-      <DataTable :value="messages" responsive-layout="scroll" striped-rows paginator :rows="10">
-        <Column field="student_name" header="Student" sortable />
-        <Column field="parent_phone" header="Parent Phone" />
-        <Column field="date" header="Sent At" sortable />
-        <Column header="Status">
-          <template #body="{ data }">
-            <Tag
-              :value="data.status"
-              :severity="data.status === 'delivered' ? 'success' : data.status === 'failed' ? 'danger' : 'warn'"
-            />
-          </template>
-        </Column>
-      </DataTable>
+    <div>
+      <p class="font-bold mb-3 px-1">Message log</p>
+      <EmptyState
+        v-if="!messages.length"
+        icon="pi pi-comments"
+        title="No messages yet"
+        description="When you send absence notifications, the delivery log will appear here."
+      />
+      <div v-else class="st-card !p-0 overflow-hidden">
+        <DataTable :value="messages" responsive-layout="scroll" striped-rows paginator :rows="10">
+          <Column field="student_name" header="Student" sortable>
+            <template #body="{ data }">
+              <span class="font-semibold">{{ data.student_name }}</span>
+            </template>
+          </Column>
+          <Column field="parent_phone" header="Parent Phone">
+            <template #body="{ data }">
+              <span class="font-mono text-xs text-light">{{ data.parent_phone }}</span>
+            </template>
+          </Column>
+          <Column field="date" header="Sent At" sortable>
+            <template #body="{ data }">
+              <span class="text-xs text-light tabular-nums">{{ fmtSentAt.format(new Date(data.date)) }}</span>
+            </template>
+          </Column>
+          <Column header="Status">
+            <template #body="{ data }">
+              <span class="st-chip" :class="STATUS_TONE[data.status as MessageStatus].chip">
+                <span class="st-chip-dot" :class="STATUS_TONE[data.status as MessageStatus].dot" />
+                {{ data.status }}
+              </span>
+            </template>
+          </Column>
+        </DataTable>
+      </div>
     </div>
   </div>
 </template>

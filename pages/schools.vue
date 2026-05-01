@@ -41,22 +41,45 @@ const toggleActive = async (s: School) => {
       <h2 class="st-h2 m-0">Schools</h2>
       <Button label="Add School" icon="pi pi-plus" @click="showAdd = true" />
     </div>
-    <div class="st-card">
+    <TableSkeleton v-if="db.loading && !db.loaded" :rows="3" :cols="5" />
+    <EmptyState
+      v-else-if="!db.schools.length"
+      icon="pi pi-building"
+      title="No schools yet"
+      description="Add your first school to start onboarding principals and teachers."
+      action-label="Add School"
+      action-icon="pi pi-plus"
+      @action="showAdd = true"
+    />
+    <div v-else class="st-card !p-0 overflow-hidden">
       <DataTable :value="db.schools" responsive-layout="scroll" striped-rows paginator :rows="10">
-        <Column field="id" header="ID" sortable />
-        <Column field="name" header="Name" sortable />
+        <Column field="id" header="ID" sortable>
+          <template #body="{ data }">
+            <code class="bg-surface text-light px-2 py-0.5 rounded text-[11px]">{{ data.id }}</code>
+          </template>
+        </Column>
+        <Column field="name" header="Name" sortable>
+          <template #body="{ data }">
+            <span class="font-semibold">{{ data.name }}</span>
+          </template>
+        </Column>
         <Column field="city" header="City" sortable />
         <Column header="Credits" sortable>
           <template #body="{ data }">
-            <span :class="data.credits < 100 ? 'text-danger' : 'text-ok'" class="font-bold">{{ data.credits }}</span>
+            <span :class="data.credits < 100 ? 'text-danger' : 'text-ok'" class="font-bold tabular-nums">
+              {{ data.credits }}
+            </span>
           </template>
         </Column>
         <Column header="Status">
           <template #body="{ data }">
-            <Tag :value="data.active ? 'Active' : 'Inactive'" :severity="data.active ? 'success' : 'danger'" />
+            <span class="st-chip" :class="data.active ? 'bg-ok/10 text-ok' : 'bg-danger/10 text-danger'">
+              <span class="st-chip-dot" :class="data.active ? 'bg-ok' : 'bg-danger'" />
+              {{ data.active ? 'Active' : 'Inactive' }}
+            </span>
           </template>
         </Column>
-        <Column header="Actions" :style="{ width: '160px' }">
+        <Column header="Actions" :style="{ width: '120px' }">
           <template #body="{ data }">
             <Button
               :label="data.active ? 'Disable' : 'Enable'"

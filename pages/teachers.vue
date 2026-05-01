@@ -11,12 +11,13 @@ const form = reactive<Partial<Teacher>>({ name: '', email: '', class_id: null, p
 const teachers = computed(() => (auth.schoolId ? db.teachersForSchool(auth.schoolId) : []))
 const classes = computed(() => (auth.schoolId ? db.classesForSchool(auth.schoolId) : []))
 
-const enriched = computed(() =>
-  teachers.value.map((t) => ({
+const enriched = computed(() => {
+  const cm = db.classMap
+  return teachers.value.map((t) => ({
     ...t,
-    class_name: classes.value.find((c) => c.id === t.class_id)?.name ?? 'Unassigned',
-  })),
-)
+    class_name: t.class_id ? cm.get(t.class_id)?.name ?? 'Unassigned' : 'Unassigned',
+  }))
+})
 
 const submit = async () => {
   if (!auth.schoolId || !form.name || !form.email) {
@@ -47,16 +48,40 @@ const submit = async () => {
       <h2 class="st-h2 m-0">Teachers</h2>
       <Button label="Add Teacher" icon="pi pi-plus" @click="showAdd = true" />
     </div>
-    <div class="st-card">
+    <TableSkeleton v-if="db.loading && !db.loaded" :rows="4" :cols="4" />
+    <EmptyState
+      v-else-if="!enriched.length"
+      icon="pi pi-id-card"
+      title="No teachers yet"
+      description="Add teachers to your school. After creating them here, invite them as users in Supabase Auth so they can sign in."
+      action-label="Add Teacher"
+      action-icon="pi pi-plus"
+      @action="showAdd = true"
+    />
+    <div v-else class="st-card !p-0 overflow-hidden">
       <DataTable :value="enriched" responsive-layout="scroll" striped-rows>
-        <Column field="name" header="Name" sortable />
-        <Column field="email" header="Email" />
-        <Column header="Assigned Class">
+        <Column field="name" header="Name" sortable>
           <template #body="{ data }">
-            <Tag :value="data.class_name" :severity="data.class_id ? 'info' : 'warn'" />
+            <span class="font-semibold">{{ data.name }}</span>
           </template>
         </Column>
-        <Column field="phone" header="Phone" />
+        <Column field="email" header="Email">
+          <template #body="{ data }">
+            <span class="font-mono text-xs text-light">{{ data.email }}</span>
+          </template>
+        </Column>
+        <Column header="Assigned Class">
+          <template #body="{ data }">
+            <span class="st-chip" :class="data.class_id ? 'bg-accentSoft text-accent' : 'bg-warn/10 text-warn'">
+              {{ data.class_name }}
+            </span>
+          </template>
+        </Column>
+        <Column field="phone" header="Phone">
+          <template #body="{ data }">
+            <span class="font-mono text-xs text-light">{{ data.phone || '—' }}</span>
+          </template>
+        </Column>
       </DataTable>
     </div>
 

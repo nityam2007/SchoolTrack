@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen bg-bg text-ink flex items-center justify-center p-5">
+  <div class="min-h-screen bg-bg text-ink">
     <slot />
+    <Toast position="top-right" />
   </div>
 </template>

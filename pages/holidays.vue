@@ -3,6 +3,9 @@ const auth = useAuthStore()
 const db = useDbStore()
 const toast = useToast()
 
+const fmtDate = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+const fmtWeekday = new Intl.DateTimeFormat('en', { weekday: 'long' })
+
 const form = reactive({ date: '', title: '' })
 
 const holidays = computed(() =>
@@ -44,18 +47,28 @@ const remove = async (id: string) => {
         <Button label="Add" icon="pi pi-plus" @click="add" />
       </div>
     </div>
-    <div class="st-card">
+    <EmptyState
+      v-if="!holidays.length"
+      icon="pi pi-calendar"
+      title="No holidays scheduled"
+      description="Add public holidays so attendance is automatically paused on those days."
+    />
+    <div v-else class="st-card !p-0 overflow-hidden">
       <DataTable :value="holidays" responsive-layout="scroll" striped-rows>
-        <Column field="date" header="Date" sortable />
+        <Column field="date" header="Date" sortable>
+          <template #body="{ data }">
+            <span class="font-semibold tabular-nums">{{ fmtDate.format(new Date(data.date)) }}</span>
+          </template>
+        </Column>
         <Column field="title" header="Title" sortable />
         <Column header="Day">
           <template #body="{ data }">
-            <Tag :value="new Date(data.date).toLocaleDateString('en', { weekday: 'long' })" severity="info" />
+            <span class="st-chip bg-violet/10 text-violet">{{ fmtWeekday.format(new Date(data.date)) }}</span>
           </template>
         </Column>
-        <Column header="Actions" :style="{ width: '120px' }">
+        <Column header="Actions" :style="{ width: '80px' }">
           <template #body="{ data }">
-            <Button icon="pi pi-trash" severity="danger" text size="small" @click="remove(data.id)" />
+            <Button icon="pi pi-trash" severity="danger" text rounded size="small" @click="remove(data.id)" />
           </template>
         </Column>
       </DataTable>

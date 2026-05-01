@@ -43,6 +43,34 @@ export const useDbStore = defineStore('db', {
     marksForExam:      (s) => (eid: string) => s.marks.filter((m) => m.exam_id === eid),
     marksForExamStudent: (s) => (eid: string, sid: string) =>
       s.marks.filter((m) => m.exam_id === eid && m.student_id === sid),
+    // Lookup maps — built once, used to avoid N+1 .find() calls in templates.
+    studentMap: (s) => new Map(s.students.map((x) => [x.id, x])),
+    classMap:   (s) => new Map(s.classes.map((c) => [c.id, c])),
+    schoolMap:  (s) => new Map(s.schools.map((x) => [x.id, x])),
+    activeSchool(state) {
+      const auth = useAuthStore()
+      return auth.schoolId ? state.schools.find((s) => s.id === auth.schoolId) ?? null : null
+    },
+    absenteesToday(state): Array<{ student_id: string; student_name: string; class_name: string; roll: string; parent_phone: string }> {
+      const auth = useAuthStore()
+      const sid = auth.schoolId
+      if (!sid) return []
+      const today = new Date().toISOString().split('T')[0]
+      const sm = new Map(state.students.map((x) => [x.id, x]))
+      const cm = new Map(state.classes.map((c) => [c.id, c]))
+      return state.attendance
+        .filter((a) => a.school_id === sid && a.date === today && a.status === 'absent')
+        .map((a) => {
+          const s = sm.get(a.student_id)
+          return {
+            student_id: a.student_id,
+            student_name: s?.name ?? '—',
+            class_name: cm.get(a.class_id)?.name ?? '—',
+            roll: s?.roll ?? '',
+            parent_phone: s?.parent_phone ?? '',
+          }
+        })
+    },
   },
 
   actions: {

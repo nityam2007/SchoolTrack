@@ -1,4 +1,4 @@
-import Aura from '@primeuix/themes/aura'
+import { SchoolTrackPreset } from './theme/preset'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
@@ -20,7 +20,7 @@ export default defineNuxtConfig({
     options: {
       ripple: true,
       theme: {
-        preset: Aura,
+        preset: SchoolTrackPreset,
         options: {
           darkModeSelector: '.app-dark',
           cssLayer: {
@@ -48,6 +48,7 @@ export default defineNuxtConfig({
   },
 
   app: {
+    pageTransition: { name: 'page', mode: 'out-in' },
     head: {
       title: 'SchoolTrack',
       meta: [
@@ -57,9 +58,11 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap',
         },
       ],
       htmlAttrs: { class: 'app-dark' },

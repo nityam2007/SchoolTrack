@@ -16,12 +16,10 @@ const classes = computed(() => (auth.schoolId ? db.classesForSchool(auth.schoolI
 const filtered = computed(() => {
   const q = search.value.toLowerCase().trim()
   const all = auth.schoolId ? db.studentsForSchool(auth.schoolId) : []
+  const cm = db.classMap
   return all
     .filter((s) => !q || s.name.toLowerCase().includes(q) || s.roll.includes(q))
-    .map((s) => ({
-      ...s,
-      class_name: classes.value.find((c) => c.id === s.class_id)?.name ?? s.class_id,
-    }))
+    .map((s) => ({ ...s, class_name: cm.get(s.class_id)?.name ?? s.class_id }))
 })
 
 const submit = async () => {
@@ -72,15 +70,33 @@ const remove = async (id: string) => {
       </div>
     </div>
 
-    <div class="st-card">
+    <TableSkeleton v-if="db.loading && !db.loaded" :rows="6" :cols="5" />
+    <EmptyState
+      v-else-if="!filtered.length"
+      icon="pi pi-users"
+      :title="search ? 'No students match your search' : 'No students yet'"
+      :description="search ? 'Try a different name or roll number.' : 'Add your first student to start managing attendance and report cards.'"
+      :action-label="!search ? 'Add Student' : undefined"
+      action-icon="pi pi-plus"
+      @action="showAdd = true"
+    />
+    <div v-else class="st-card !p-0 overflow-hidden">
       <DataTable :value="filtered" responsive-layout="scroll" striped-rows paginator :rows="10">
         <Column field="roll" header="Roll" sortable />
-        <Column field="name" header="Name" sortable />
-        <Column field="class_name" header="Class" sortable />
-        <Column field="parent_phone" header="Parent Phone" />
-        <Column header="Actions" :style="{ width: '120px' }">
+        <Column field="name" header="Name" sortable>
           <template #body="{ data }">
-            <Button icon="pi pi-trash" severity="danger" text size="small" @click="remove(data.id)" />
+            <span class="font-semibold">{{ data.name }}</span>
+          </template>
+        </Column>
+        <Column field="class_name" header="Class" sortable />
+        <Column field="parent_phone" header="Parent Phone">
+          <template #body="{ data }">
+            <span class="font-mono text-xs text-light">{{ data.parent_phone || '—' }}</span>
+          </template>
+        </Column>
+        <Column header="Actions" :style="{ width: '80px' }">
+          <template #body="{ data }">
+            <Button icon="pi pi-trash" severity="danger" text rounded size="small" @click="remove(data.id)" />
           </template>
         </Column>
       </DataTable>
