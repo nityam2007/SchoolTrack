@@ -1,12 +1,16 @@
 # Module: Principal — Teachers Management
 
-> **Tab key:** `teachers`  
-> **Component:** `TeachersPage`  
+> **Path:** `/teachers`
+> **File:** `pages/teachers/index.vue`
+> **Detail page:** [`/teachers/:id`](./principal-teacher-detail.md)
 > **Role:** Principal (School Admin)
 
 ## Purpose
 
-View and add teachers assigned to the school. Each teacher gets a login and class assignment.
+View and add teachers assigned to the school. Each teacher gets a login
+(provisioned in Supabase Auth) and a class assignment. Clicking a row
+opens the per-teacher detail with their roster, today's attendance and a
+class-reassignment action.
 
 ## UI Structure
 

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { Student } from '~/types/database'
 
-const auth = useAuthStore()
+definePageMeta({ middleware: ['principal-only'] })
+
 const db = useDbStore()
 const toast = useToast()
+const confirm = useConfirm()
+const router = useRouter()
 
 const search = ref('')
 const showAdd = ref(false)
@@ -12,10 +15,10 @@ const form = reactive<Partial<Student>>({
   dob: null, gender: null, father_name: '', mother_name: '',
 })
 
-const classes = computed(() => (auth.schoolId ? db.classesForSchool(auth.schoolId) : []))
+const classes = computed(() => (db.activeSchoolId ? db.classesForSchool(db.activeSchoolId) : []))
 const filtered = computed(() => {
   const q = search.value.toLowerCase().trim()
-  const all = auth.schoolId ? db.studentsForSchool(auth.schoolId) : []
+  const all = db.activeSchoolId ? db.studentsForSchool(db.activeSchoolId) : []
   const cm = db.classMap
   return all
     .filter((s) => !q || s.name.toLowerCase().includes(q) || s.roll.includes(q))
@@ -23,15 +26,14 @@ const filtered = computed(() => {
 })
 
 const submit = async () => {
-  if (!auth.schoolId || !form.name || !form.class_id || !form.roll) {
+  if (!db.activeSchoolId || !form.name || !form.class_id || !form.roll) {
     toast.add({ severity: 'warn', summary: 'Missing fields', detail: 'Name, class, and roll are required.', life: 3000 })
     return
   }
-  const id = `S${Date.now().toString(36).toUpperCase()}`
   try {
     await db.addStudent({
-      id,
-      school_id: auth.schoolId,
+      id: makeId('S'),
+      school_id: db.activeSchoolId,
       class_id: form.class_id!,
       name: form.name!,
       roll: form.roll!,
@@ -42,19 +44,35 @@ const submit = async () => {
       mother_name: form.mother_name ?? null,
       attendance_pct: 0,
     })
-    toast.add({ severity: 'success', summary: 'Student added', life: 2000 })
+    toastOk(toast, 'Student added')
     showAdd.value = false
     Object.assign(form, { name: '', roll: '', class_id: '', parent_phone: '', dob: null, gender: null, father_name: '', mother_name: '' })
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed to add', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e, 'Failed to add')
   }
 }
 
-const remove = async (id: string) => {
-  if (!confirm('Remove this student?')) return
-  try { await db.removeStudent(id) }
-  catch (e) { toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 }) }
+const remove = (id: string) => {
+  const s = db.students.find((x) => x.id === id)
+  confirm.require({
+    message: s ? `Remove ${s.name} (Roll ${s.roll})? This cannot be undone.` : 'Remove this student?',
+    header: 'Confirm removal',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: 'Remove',
+    rejectLabel: 'Cancel',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        await db.removeStudent(id)
+        toastOk(toast, 'Student removed')
+      } catch (e) {
+        toastError(toast, e)
+      }
+    },
+  })
 }
+
+const open = (s: Student) => router.push(`/students/${s.id}`)
 </script>
 
 <template>
@@ -81,7 +99,16 @@ const remove = async (id: string) => {
       @action="showAdd = true"
     />
     <div v-else class="st-card !p-0 overflow-hidden">
-      <DataTable :value="filtered" responsive-layout="scroll" striped-rows paginator :rows="10">
+      <DataTable
+        :value="filtered"
+        responsive-layout="scroll"
+        striped-rows
+        paginator
+        :rows="10"
+        row-hover
+        :row-class="() => 'cursor-pointer'"
+        @row-click="(e) => open(e.data)"
+      >
         <Column field="roll" header="Roll" sortable />
         <Column field="name" header="Name" sortable>
           <template #body="{ data }">
@@ -94,9 +121,12 @@ const remove = async (id: string) => {
             <span class="font-mono text-xs text-light">{{ data.parent_phone || '—' }}</span>
           </template>
         </Column>
-        <Column header="Actions" :style="{ width: '80px' }">
+        <Column header="Actions" :style="{ width: '120px' }">
           <template #body="{ data }">
-            <Button icon="pi pi-trash" severity="danger" text rounded size="small" @click="remove(data.id)" />
+            <div class="flex gap-1.5" @click.stop>
+              <Button icon="pi pi-eye" severity="secondary" outlined size="small" aria-label="Open" @click="open(data)" />
+              <Button icon="pi pi-trash" severity="danger" outlined size="small" aria-label="Remove" @click="remove(data.id)" />
+            </div>
           </template>
         </Column>
       </DataTable>

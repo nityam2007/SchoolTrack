@@ -1,8 +1,10 @@
 <script setup lang="ts">
+definePageMeta({ middleware: ['teacher-only'] })
+
 const auth = useAuthStore()
 const db = useDbStore()
 
-const today = new Date().toISOString().split('T')[0]
+const today = todayLocal()
 
 const cls = computed(() =>
   auth.user?.classId ? db.classes.find((c) => c.id === auth.user!.classId) ?? null : null,

@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import type { Marks } from '~/types/database'
 
-const auth = useAuthStore()
 const db = useDbStore()
 const route = useRoute()
 const toast = useToast()
 
 const examId = computed(() => route.params.examId as string)
 const exam = computed(() => db.exams.find((e) => e.id === examId.value) ?? null)
-const subjects = computed(() => (auth.schoolId ? db.subjectsForSchool(auth.schoolId) : []))
+const subjects = computed(() => (db.activeSchoolId ? db.subjectsForSchool(db.activeSchoolId) : []))
 const roster = computed(() =>
   exam.value ? db.studentsForClass(exam.value.class_id) : [],
 )
@@ -35,14 +34,14 @@ const loadDraft = () => {
 watch([selStudentId, () => exam.value?.id, () => subjects.value.length], loadDraft, { immediate: true })
 
 const stats = computed(() => calcReportStats(subjects.value, Object.entries(draft.value).map(([subject_id, v]) => ({
-  id: '', school_id: auth.schoolId ?? '', exam_id: examId.value, student_id: selStudentId.value, subject_id, theory: v.theory, practical: v.practical,
+  id: '', school_id: db.activeSchoolId ?? '', exam_id: examId.value, student_id: selStudentId.value, subject_id, theory: v.theory, practical: v.practical,
 })) as unknown as Marks[]))
 
 const saving = ref(false)
 const save = async () => {
-  if (!exam.value || !selStudentId.value || !auth.schoolId) return
+  if (!exam.value || !selStudentId.value || !db.activeSchoolId) return
   const rows = subjects.value.map((sub) => ({
-    school_id: auth.schoolId!,
+    school_id: db.activeSchoolId!,
     exam_id: exam.value!.id,
     student_id: selStudentId.value,
     subject_id: sub.id,
@@ -52,9 +51,9 @@ const save = async () => {
   saving.value = true
   try {
     await db.upsertMarks(rows)
-    toast.add({ severity: 'success', summary: 'Marks saved', life: 2000 })
+    toastOk(toast, 'Marks saved')
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e)
   } finally {
     saving.value = false
   }

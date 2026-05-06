@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: ['super-admin-only'] })
+
 const db = useDbStore()
 
 const totals = computed(() => {

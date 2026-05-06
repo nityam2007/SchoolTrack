@@ -30,6 +30,7 @@ export default {
         // Brand
         accent:     '#3B82F6',
         accentSoft: 'rgba(59,130,246,0.12)',
+        accentGlow: 'rgba(59,130,246,0.18)',
         accentRing: 'rgba(59,130,246,0.35)',
         // Status
         ok:     '#10B981',

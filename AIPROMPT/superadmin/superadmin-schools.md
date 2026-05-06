@@ -1,12 +1,19 @@
 # Module: Super Admin — Schools Management
 
-> **Tab key:** `schools`  
-> **Component:** `SchoolsPage`  
-> **Role:** Super Admin only
+> **Path:** `/schools`
+> **File:** `pages/schools/index.vue`
+> **Detail page:** [`/schools/:id`](./superadmin-school-detail.md)
+> **Role:** Super Admin only (`super-admin-only` middleware + global guard)
 
 ## Purpose
 
-Full CRUD for schools. Add new schools, toggle active/inactive, manage Principal login credentials.
+Schools list with add / enable / disable. Clicking a row drills down into
+the per-school detail view (credits top-up, classes, teachers).
+
+> **Note:** Login credentials are now managed in **Supabase Auth** directly
+> (`scripts/seed-users.mjs` for demos, Supabase dashboard for production).
+> The previous "Credentials" modal has been removed — `app_metadata.role`
+> + `app_metadata.school_id` on the auth user is the source of truth.
 
 ## UI Structure
 
@@ -26,60 +33,32 @@ Full CRUD for schools. Add new schools, toggle active/inactive, manage Principal
 
 | Column | Content |
 |---|---|
-| School ID | `SCH001` code badge |
+| School ID | `SCH###` code badge |
 | Name | Bold school name |
 | City | Plain text |
-| Students | Count |
 | Credits | Green if ≥100, red if <100 |
-| Admin Email | Email or "Not set" (red) |
-| Password | Masked `••••••••` with 👁 toggle |
-| Status | Active/Inactive badge |
-| Actions | Credentials button + Enable/Disable toggle |
+| Status | Active/Inactive chip with status dot |
+| Actions | **Open** (eye) → `/schools/:id`, plus Enable/Disable toggle |
+
+Whole rows are clickable and open the detail page. Per-row buttons stop
+propagation so clicking Disable doesn't also navigate away.
 
 ## Add School Modal
-
-```
-┌─ Add New School ──────────────── × ─┐
-│  [ School Name *              ]     │
-│  [ City                       ]     │
-│  [ Initial Credits (200)      ]     │
-│  ─────────────────────────────────  │
-│  Principal (School Admin) Login     │
-│  [ Admin Email *              ]     │
-│  [ Admin Password *           ]     │
-│  [ Create School              ]     │
-└─────────────────────────────────────┘
-```
 
 | Field | Type | Required |
 |---|---|---|
 | School Name | Text | ✅ |
 | City | Text | ❌ |
 | Credits | Number (default 200) | ❌ |
-| Admin Email | Text | ✅ |
-| Admin Password | Text | ✅ |
 
-## Credentials Modal
-
-```
-┌─ Update Credentials — Greenwood ─ × ─┐
-│  "Login credentials for the Principal" │
-│  [ Admin Email              ]          │
-│  [ Admin Password           ]          │
-│  ┌─ Share these with Principal ──────┐ │
-│  │  URL: schooltrack.app/login       │ │
-│  │  Email: principal@greenwood.edu   │ │
-│  │  Password: school123              │ │
-│  └───────────────────────────────────┘ │
-│  [ Save Credentials        ]          │
-└────────────────────────────────────────┘
-```
+After creation an info `Message` reminds the operator to provision the
+Principal's auth user separately in Supabase (Auth → Users) with
+`app_metadata = { role: 'schooladmin', school_id: '<new id>' }`.
 
 ## Actions
 
 | Action | Effect |
 |---|---|
-| Add School | Creates school with auto-generated ID (`SCH###`) |
-| Disable/Enable | Toggles `school.active` — disabled schools can't log in |
-| Credentials | Updates `adminEmail` and `adminPass` for the Principal |
-| Password Toggle | Shows/hides password per school row |
+| Row click / **Open** | Push to `/schools/:id` (full detail) |
+| Add School | Creates school with `SCH${Date.now().toString(36).toUpperCase()}` id (collision-safe across deletes) |
+| Disable/Enable | Toggles `school.active` — disabled schools' users can't reach data via RLS |

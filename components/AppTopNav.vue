@@ -5,21 +5,32 @@ const route = useRoute()
 const { initials, firstName, greeting } = useUserDisplay()
 
 const userMenu = ref()
-const userMenuItems = computed(() => [
-  {
-    label: auth.user?.email ?? '',
-    items: [
-      { label: 'Account settings', icon: 'pi pi-user', disabled: true },
-      { label: 'Reload data', icon: 'pi pi-refresh', command: () => db.loadAll() },
-      { separator: true },
-      {
-        label: 'Sign out',
-        icon: 'pi pi-sign-out',
-        command: async () => { await auth.logout(); navigateTo('/login') },
-      },
-    ],
-  },
-])
+const showViewAs = ref(false)
+const userMenuItems = computed(() => {
+  const items: Array<Record<string, unknown>> = [
+    { label: 'Account settings', icon: 'pi pi-user', disabled: true },
+    { label: 'Reload data', icon: 'pi pi-refresh', command: () => db.loadAll() },
+  ]
+  // Superadmins (real, not currently impersonating) can start impersonation.
+  const realRole = auth.realUser?.role ?? auth.role
+  if (realRole === 'superadmin' && !auth.isImpersonating) {
+    items.push({ label: 'Impersonate user…', icon: 'pi pi-sign-in', command: () => { showViewAs.value = true } })
+  }
+  if (auth.isImpersonating) {
+    items.push({
+      label: 'Exit impersonation',
+      icon: 'pi pi-times',
+      command: async () => { await auth.exitImpersonation(); navigateTo('/dashboard') },
+    })
+  }
+  items.push({ separator: true })
+  items.push({
+    label: 'Sign out',
+    icon: 'pi pi-sign-out',
+    command: async () => { await auth.logout(); navigateTo('/login') },
+  })
+  return [{ label: auth.user?.email ?? '', items }]
+})
 
 const PAGE_TITLES: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -32,6 +43,8 @@ const PAGE_TITLES: Record<string, string> = {
   holidays: 'Holidays',
   messages: 'Messages',
   reports: 'Reports',
+  subjects: 'Subjects',
+  classes: 'Classes',
   'mark-attendance': 'Mark Attendance',
   'my-class': 'My Class',
   'report-cards': 'Report Cards',
@@ -64,13 +77,7 @@ const creditsTone = computed(() => {
     </div>
 
     <div class="flex items-center gap-2">
-      <span class="hidden md:block">
-        <IconField>
-          <InputIcon class="pi pi-search" />
-          <InputText placeholder="Search…" size="small" class="w-56" />
-        </IconField>
-      </span>
-
+      <SchoolSwitcher />
       <span
         v-if="db.activeSchool && auth.role === 'schooladmin'"
         class="st-chip !rounded-ctl !py-1.5 !px-3 !text-sm tabular-nums"
@@ -81,9 +88,8 @@ const creditsTone = computed(() => {
         <span class="opacity-70 normal-case font-normal text-[11px]">credits</span>
       </span>
 
-      <Button icon="pi pi-bell" severity="secondary" text rounded aria-label="Notifications" />
-
       <Menu ref="userMenu" :model="userMenuItems" :popup="true" />
+      <ViewAsDialog v-model:visible="showViewAs" />
       <button
         class="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-surface2 transition-colors"
         @click="(e) => userMenu.toggle(e)"

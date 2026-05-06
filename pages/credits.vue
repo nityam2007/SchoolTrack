@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: ['super-admin-only'] })
+
 const db = useDbStore()
 const toast = useToast()
 
@@ -9,11 +11,11 @@ const submit = async () => {
   if (!selected.value) return
   try {
     await db.topUpCredits(selected.value, Number(amount.value))
-    toast.add({ severity: 'success', summary: 'Credits added', life: 2000 })
+    toastOk(toast, 'Credits added')
     selected.value = null
     amount.value = 100
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e)
   }
 }
 </script>

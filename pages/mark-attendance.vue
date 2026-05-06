@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { Attendance, AttendanceStatus } from '~/types/database'
 
+definePageMeta({ middleware: ['teacher-only'] })
+
 const auth = useAuthStore()
 const db = useDbStore()
 const toast = useToast()
 
-const today = new Date().toISOString().split('T')[0]
+const today = todayLocal()
 
 const cls = computed(() =>
   auth.user?.classId ? db.classes.find((c) => c.id === auth.user!.classId) ?? null : null,
@@ -42,7 +44,7 @@ const submit = async () => {
   }
   if (!auth.user?.classId || !auth.schoolId) return
   const records: Attendance[] = roster.value.map((s) => ({
-    id: `A${Date.now().toString(36).toUpperCase()}-${s.id}`,
+    id: makeId('A', s.id),
     school_id: auth.schoolId!,
     class_id: auth.user!.classId!,
     student_id: s.id,
@@ -55,10 +57,10 @@ const submit = async () => {
   submitting.value = true
   try {
     await db.upsertAttendanceBatch(records)
-    toast.add({ severity: 'success', summary: 'Attendance saved', life: 2000 })
+    toastOk(toast, 'Attendance saved')
     navigateTo('/dashboard')
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e)
   } finally {
     submitting.value = false
   }

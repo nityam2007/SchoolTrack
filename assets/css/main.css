@@ -1,6 +1,20 @@
-@tailwind base;
+/* PrimeVue 4's Aura preset relies on a CSS @layer cascade that puts Tailwind's
+   preflight BEHIND PrimeVue and Tailwind's utilities AHEAD of it. nuxt.config
+   declares the layer order; we must mirror it here so each Tailwind directive
+   lands in the correct layer. Without this, preflight's `input { padding: 0 }`
+   overrides PrimeVue's IconField padding and the leading icon overlaps the
+   placeholder text in the email/search inputs. */
+@layer tailwind-base, primevue, tailwind-utilities;
+
+@layer tailwind-base {
+  @tailwind base;
+}
+
 @tailwind components;
-@tailwind utilities;
+
+@layer tailwind-utilities {
+  @tailwind utilities;
+}
 
 html {
   color-scheme: dark;

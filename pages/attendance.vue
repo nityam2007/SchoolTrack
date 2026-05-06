@@ -1,19 +1,20 @@
 <script setup lang="ts">
-const auth = useAuthStore()
+definePageMeta({ middleware: ['principal-only'] })
+
 const db = useDbStore()
 
-const date = ref('2026-03-04')
+const date = ref(todayLocal())
 const selClass = ref<string>('all')
 
 const classes = computed(() =>
-  auth.schoolId ? db.classesForSchool(auth.schoolId) : [],
+  db.activeSchoolId ? db.classesForSchool(db.activeSchoolId) : [],
 )
 
 const records = computed(() => {
-  if (!auth.schoolId) return []
+  if (!db.activeSchoolId) return []
   return db.attendance.filter(
     (a) =>
-      a.school_id === auth.schoolId &&
+      a.school_id === db.activeSchoolId &&
       a.date === date.value &&
       (selClass.value === 'all' || a.class_id === selClass.value),
   )

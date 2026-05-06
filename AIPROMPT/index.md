@@ -37,7 +37,8 @@ AIPROMPT/
 | File | Description |
 |---|---|
 | [superadmin-dashboard.md](./superadmin/superadmin-dashboard.md) | Platform overview dashboard |
-| [superadmin-schools.md](./superadmin/superadmin-schools.md) | School CRUD, enable/disable, credentials |
+| [superadmin-schools.md](./superadmin/superadmin-schools.md) | School list (CRUD, enable/disable) — `/schools` |
+| [superadmin-school-detail.md](./superadmin/superadmin-school-detail.md) | Single-school drill-down — `/schools/:id` |
 | [superadmin-credits.md](./superadmin/superadmin-credits.md) | Credit top-up management |
 | [superadmin-analytics.md](./superadmin/superadmin-analytics.md) | Platform-wide analytics |
 
@@ -47,8 +48,10 @@ AIPROMPT/
 |---|---|
 | [principal-dashboard.md](./principal/principal-dashboard.md) | School dashboard with today's stats |
 | [principal-attendance.md](./principal/principal-attendance.md) | Attendance records viewer (read-only) |
-| [principal-teachers.md](./principal/principal-teachers.md) | Teacher management |
-| [principal-students.md](./principal/principal-students.md) | Student roster management |
+| [principal-teachers.md](./principal/principal-teachers.md) | Teacher list — `/teachers` |
+| [principal-teacher-detail.md](./principal/principal-teacher-detail.md) | Single-teacher drill-down — `/teachers/:id` |
+| [principal-students.md](./principal/principal-students.md) | Student list — `/students` |
+| [principal-student-detail.md](./principal/principal-student-detail.md) | Single-student drill-down — `/students/:id` |
 | [principal-holidays.md](./principal/principal-holidays.md) | Holiday calendar management |
 | [principal-messages.md](./principal/principal-messages.md) | WhatsApp absence notifications |
 | [principal-reports.md](./principal/principal-reports.md) | Class & student attendance reports |

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Message, MessageStatus } from '~/types/database'
 
-const auth = useAuthStore()
+definePageMeta({ middleware: ['principal-only'] })
+
 const db = useDbStore()
 const toast = useToast()
 
@@ -15,7 +16,7 @@ const fmtSentAt = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeSt
 const filter = ref<'class' | 'school'>('class')
 const selClass = ref<string>('')
 
-const classes = computed(() => (auth.schoolId ? db.classesForSchool(auth.schoolId) : []))
+const classes = computed(() => (db.activeSchoolId ? db.classesForSchool(db.activeSchoolId) : []))
 
 watchEffect(() => {
   if (!selClass.value && classes.value.length) selClass.value = classes.value[0].id
@@ -30,21 +31,24 @@ const absentees = computed(() => {
 })
 
 const messages = computed(() =>
-  auth.schoolId ? db.messagesForSchool(auth.schoolId) : [],
+  db.activeSchoolId ? db.messagesForSchool(db.activeSchoolId) : [],
 )
 
 const sending = ref(false)
 const send = async () => {
-  if (!db.activeSchool || !auth.schoolId) return
-  if (db.activeSchool.credits < absentees.value.length) {
+  if (sending.value) return
+  if (!db.activeSchool || !db.activeSchoolId) return
+  const targets = absentees.value
+  if (!targets.length) return
+  if (db.activeSchool.credits < targets.length) {
     toast.add({ severity: 'warn', summary: 'Insufficient credits', life: 3000 })
     return
   }
   sending.value = true
-  const sid = auth.schoolId
+  const sid = db.activeSchoolId
   const now = new Date()
-  const newMsgs: Message[] = absentees.value.map((s) => ({
-    id: `M${Date.now().toString(36).toUpperCase()}-${s.student_id}`,
+  const newMsgs: Message[] = targets.map((s) => ({
+    id: makeId('M', s.student_id),
     school_id: sid,
     student_name: s.student_name,
     parent_phone: s.parent_phone,
@@ -52,13 +56,19 @@ const send = async () => {
     status: 'delivered',
   }))
   try {
-    await Promise.all([
-      db.addMessages(newMsgs),
-      db.updateSchool(sid, { credits: db.activeSchool.credits - newMsgs.length }),
-    ])
-    toast.add({ severity: 'success', summary: `Sent to ${newMsgs.length} parent(s)`, life: 2500 })
+    // Credits are decremented server-side via the
+    // `decrement_school_credits_on_message` trigger (SECURITY DEFINER) —
+    // principals have no direct UPDATE on schools under RLS.
+    await db.addMessages(newMsgs)
+    // Re-read credits so the topbar chip reflects the trigger's decrement.
+    const { data: fresh } = await useSb()
+      .from('schools').select('credits').eq('id', sid).single<{ credits: number }>()
+    if (db.activeSchool && typeof fresh?.credits === 'number') {
+      db.activeSchool.credits = fresh.credits
+    }
+    toastOk(toast, `Sent to ${newMsgs.length} parent(s)`, 2500)
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e)
   } finally {
     sending.value = false
   }
@@ -93,7 +103,16 @@ const send = async () => {
       <div class="bg-surface rounded-ctl p-4 mb-4 text-sm leading-6">
         <p class="text-muted m-0 mb-1 text-xs">Message preview</p>
         <p class="m-0">
-          "Dear Parent, your child <em>[Student]</em> from class <em>[Class]</em> was absent today. Please contact the school if this was unexpected."
+          <template v-if="absentees.length">
+            "Dear Parent, your child
+            <em class="not-italic font-semibold text-ink">{{ absentees[0].student_name }}</em>
+            from class
+            <em class="not-italic font-semibold text-ink">{{ absentees[0].class_name }}</em>
+            was absent today. Please contact the school if this was unexpected."
+          </template>
+          <template v-else>
+            "Dear Parent, your child <em class="not-italic">[Student]</em> from class <em class="not-italic">[Class]</em> was absent today. Please contact the school if this was unexpected."
+          </template>
         </p>
       </div>
 

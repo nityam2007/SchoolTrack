@@ -1,12 +1,15 @@
 # Module: Principal — Students Management
 
-> **Tab key:** `students`  
-> **Component:** `StudentsPage`  
+> **Path:** `/students`
+> **File:** `pages/students/index.vue`
+> **Detail page:** [`/students/:id`](./principal-student-detail.md)
 > **Role:** Principal (School Admin)
 
 ## Purpose
 
 Full student roster management. Search, add, and remove students.
+Clicking a row opens the per-student detail (profile, attendance history,
+exam results).
 
 ## UI Structure
 
@@ -25,8 +28,9 @@ Full student roster management. Search, add, and remove students.
 
 | Feature | Detail |
 |---|---|
+| Row click / **Open** | Push to `/students/:id` |
 | Search | Filters by name (case-insensitive) OR roll number |
-| Remove | Red button, removes student from db immediately |
+| Remove | Uses PrimeVue `ConfirmDialog` (no browser `confirm()`); cascades to attendance & marks via RLS-aware FK |
 
 ## Table Columns
 

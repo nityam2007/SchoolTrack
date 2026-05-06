@@ -76,11 +76,40 @@ Special cases:
 
 ```
 Nuxt App
-├── stores/auth.ts      — Pinia: current AuthUser, login(), logout(), refresh()
-├── stores/db.ts        — Pinia: schools/classes/.../marks (read from Supabase)
-├── plugins/db-loader   — fetches db.loadAll() on auth change
-└── middleware/auth.global — redirects unauthenticated users to /login
+├── stores/auth.ts          — Pinia: current AuthUser, login(), logout(), refresh()
+│                            (refresh dedups via inflight promise; reads role
+│                             from JWT app_metadata to avoid supabase-js auth
+│                             lock deadlocks during full-page hydration)
+├── stores/db.ts            — Pinia: schools/classes/.../marks (read from Supabase)
+├── plugins/db-loader       — fetches db.loadAll() on auth change
+├── plugins/role-guard      — reactive role gate; redirects on every route or
+│                            auth change (covers SSR-rendered pages where
+│                            middleware does not re-run on hydration)
+├── middleware/auth.global  — auth + role gate on client navigations
+├── middleware/super-admin-only / principal-only / teacher-only
+│                          — per-page gates for client navigations
+└── layouts/default.vue     — wraps page slot in <ClientOnly> so auth-driven
+                              UI does not produce SSR/CSR hydration mismatches
 ```
+
+### Route map
+
+| Path                          | Role(s)              | File |
+|---|---|---|
+| `/login`                      | public               | `pages/login.vue` |
+| `/dashboard`                  | any authenticated    | `pages/dashboard.vue` |
+| `/schools` · `/schools/:id`   | superadmin           | `pages/schools/index.vue` · `pages/schools/[id].vue` |
+| `/credits`                    | superadmin           | `pages/credits.vue` |
+| `/analytics`                  | superadmin           | `pages/analytics.vue` |
+| `/attendance`                 | schooladmin          | `pages/attendance.vue` |
+| `/teachers` · `/teachers/:id` | schooladmin          | `pages/teachers/index.vue` · `pages/teachers/[id].vue` |
+| `/students` · `/students/:id` | schooladmin          | `pages/students/index.vue` · `pages/students/[id].vue` |
+| `/holidays`                   | schooladmin          | `pages/holidays.vue` |
+| `/messages`                   | schooladmin          | `pages/messages.vue` |
+| `/reports`                    | schooladmin          | `pages/reports.vue` |
+| `/mark-attendance`            | teacher              | `pages/mark-attendance.vue` |
+| `/my-class`                   | teacher              | `pages/my-class.vue` |
+| `/report-cards/...`           | schooladmin, teacher | `pages/report-cards/**` |
 
 ## Vercel Deployment
 

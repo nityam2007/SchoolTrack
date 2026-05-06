@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { School } from '~/types/database'
 
+definePageMeta({ middleware: ['super-admin-only'] })
+
 const db = useDbStore()
 const toast = useToast()
+const router = useRouter()
 
 const showAdd = ref(false)
 const form = reactive<Partial<School>>({ name: '', city: '', credits: 200, active: true })
@@ -12,27 +15,28 @@ const submit = async () => {
     toast.add({ severity: 'warn', summary: 'Name is required', life: 3000 })
     return
   }
-  const id = `SCH${(db.schools.length + 1).toString().padStart(3, '0')}`
   try {
     await db.addSchool({
-      id,
+      id: makeId('SCH'),
       name: form.name!,
       city: form.city ?? '',
       credits: Number(form.credits ?? 0),
       active: form.active ?? true,
     })
-    toast.add({ severity: 'success', summary: 'School added', life: 2000 })
+    toastOk(toast, 'School added')
     showAdd.value = false
     Object.assign(form, { name: '', city: '', credits: 200, active: true })
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e)
   }
 }
 
 const toggleActive = async (s: School) => {
   try { await db.updateSchool(s.id, { active: !s.active }) }
-  catch (e) { toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 }) }
+  catch (e) { toastError(toast, e) }
 }
+
+const open = (s: School) => router.push(`/schools/${s.id}`)
 </script>
 
 <template>
@@ -52,7 +56,16 @@ const toggleActive = async (s: School) => {
       @action="showAdd = true"
     />
     <div v-else class="st-card !p-0 overflow-hidden">
-      <DataTable :value="db.schools" responsive-layout="scroll" striped-rows paginator :rows="10">
+      <DataTable
+        :value="db.schools"
+        responsive-layout="scroll"
+        striped-rows
+        paginator
+        :rows="10"
+        row-hover
+        :row-class="() => 'cursor-pointer'"
+        @row-click="(e) => open(e.data)"
+      >
         <Column field="id" header="ID" sortable>
           <template #body="{ data }">
             <code class="bg-surface text-light px-2 py-0.5 rounded text-[11px]">{{ data.id }}</code>
@@ -79,15 +92,18 @@ const toggleActive = async (s: School) => {
             </span>
           </template>
         </Column>
-        <Column header="Actions" :style="{ width: '120px' }">
+        <Column header="Actions" :style="{ width: '180px' }">
           <template #body="{ data }">
-            <Button
-              :label="data.active ? 'Disable' : 'Enable'"
-              :severity="data.active ? 'danger' : 'success'"
-              size="small"
-              outlined
-              @click="toggleActive(data)"
-            />
+            <div class="flex gap-1.5" @click.stop>
+              <Button icon="pi pi-eye" severity="secondary" outlined size="small" aria-label="Open" @click="open(data)" />
+              <Button
+                :label="data.active ? 'Disable' : 'Enable'"
+                :severity="data.active ? 'danger' : 'success'"
+                size="small"
+                outlined
+                @click="toggleActive(data)"
+              />
+            </div>
           </template>
         </Column>
       </DataTable>

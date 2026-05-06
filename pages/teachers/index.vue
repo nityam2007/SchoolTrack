@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import type { Teacher } from '~/types/database'
 
-const auth = useAuthStore()
+definePageMeta({ middleware: ['principal-only'] })
+
 const db = useDbStore()
 const toast = useToast()
+const router = useRouter()
 
 const showAdd = ref(false)
 const form = reactive<Partial<Teacher>>({ name: '', email: '', class_id: null, phone: '' })
 
-const teachers = computed(() => (auth.schoolId ? db.teachersForSchool(auth.schoolId) : []))
-const classes = computed(() => (auth.schoolId ? db.classesForSchool(auth.schoolId) : []))
+const teachers = computed(() => (db.activeSchoolId ? db.teachersForSchool(db.activeSchoolId) : []))
+const classes = computed(() => (db.activeSchoolId ? db.classesForSchool(db.activeSchoolId) : []))
 
 const enriched = computed(() => {
   const cm = db.classMap
@@ -20,26 +22,28 @@ const enriched = computed(() => {
 })
 
 const submit = async () => {
-  if (!auth.schoolId || !form.name || !form.email) {
+  if (!db.activeSchoolId || !form.name || !form.email) {
     toast.add({ severity: 'warn', summary: 'Missing fields', detail: 'Name and email are required.', life: 3000 })
     return
   }
   try {
     await db.addTeacher({
-      id: `T${Date.now().toString(36).toUpperCase()}`,
-      school_id: auth.schoolId,
+      id: makeId('T'),
+      school_id: db.activeSchoolId,
       class_id: form.class_id ?? null,
       name: form.name!,
       email: form.email!,
       phone: form.phone ?? '',
     })
-    toast.add({ severity: 'success', summary: 'Teacher added', life: 2000 })
+    toastOk(toast, 'Teacher added')
     showAdd.value = false
     Object.assign(form, { name: '', email: '', class_id: null, phone: '' })
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e)
   }
 }
+
+const open = (t: Teacher) => router.push(`/teachers/${t.id}`)
 </script>
 
 <template>
@@ -59,7 +63,14 @@ const submit = async () => {
       @action="showAdd = true"
     />
     <div v-else class="st-card !p-0 overflow-hidden">
-      <DataTable :value="enriched" responsive-layout="scroll" striped-rows>
+      <DataTable
+        :value="enriched"
+        responsive-layout="scroll"
+        striped-rows
+        row-hover
+        :row-class="() => 'cursor-pointer'"
+        @row-click="(e) => open(e.data)"
+      >
         <Column field="name" header="Name" sortable>
           <template #body="{ data }">
             <span class="font-semibold">{{ data.name }}</span>
@@ -80,6 +91,13 @@ const submit = async () => {
         <Column field="phone" header="Phone">
           <template #body="{ data }">
             <span class="font-mono text-xs text-light">{{ data.phone || '—' }}</span>
+          </template>
+        </Column>
+        <Column header="" :style="{ width: '80px' }">
+          <template #body="{ data }">
+            <div @click.stop>
+              <Button icon="pi pi-eye" severity="secondary" outlined size="small" aria-label="Open" @click="open(data)" />
+            </div>
           </template>
         </Column>
       </DataTable>

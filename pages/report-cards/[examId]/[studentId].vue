@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const auth = useAuthStore()
 const db = useDbStore()
 const route = useRoute()
 
@@ -15,7 +14,7 @@ const school = computed(() =>
   student.value ? db.schools.find((s) => s.id === student.value!.school_id) ?? null : null,
 )
 const subjects = computed(() =>
-  auth.schoolId ? db.subjectsForSchool(auth.schoolId) : [],
+  db.activeSchoolId ? db.subjectsForSchool(db.activeSchoolId) : [],
 )
 const marks = computed(() =>
   exam.value && student.value ? db.marksForExamStudent(exam.value.id, student.value.id) : [],

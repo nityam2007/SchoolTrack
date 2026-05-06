@@ -1,7 +1,9 @@
 <script setup lang="ts">
-const auth = useAuthStore()
+definePageMeta({ middleware: ['principal-only'] })
+
 const db = useDbStore()
 const toast = useToast()
+const confirm = useConfirm()
 
 const fmtDate = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 const fmtWeekday = new Intl.DateTimeFormat('en', { weekday: 'long' })
@@ -9,30 +11,45 @@ const fmtWeekday = new Intl.DateTimeFormat('en', { weekday: 'long' })
 const form = reactive({ date: '', title: '' })
 
 const holidays = computed(() =>
-  auth.schoolId
-    ? [...db.holidaysForSchool(auth.schoolId)].sort((a, b) => a.date.localeCompare(b.date))
+  db.activeSchoolId
+    ? [...db.holidaysForSchool(db.activeSchoolId)].sort((a, b) => a.date.localeCompare(b.date))
     : [],
 )
 
 const add = async () => {
-  if (!auth.schoolId || !form.date || !form.title) return
+  if (!db.activeSchoolId || !form.date || !form.title) return
   try {
     await db.addHoliday({
-      id: `H${Date.now().toString(36).toUpperCase()}`,
-      school_id: auth.schoolId,
+      id: makeId('H'),
+      school_id: db.activeSchoolId,
       date: form.date,
       title: form.title,
     })
     form.date = ''
     form.title = ''
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e)
   }
 }
 
-const remove = async (id: string) => {
-  try { await db.removeHoliday(id) }
-  catch (e) { toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 }) }
+const remove = (id: string) => {
+  const h = db.holidays.find((x) => x.id === id)
+  confirm.require({
+    message: h ? `Remove "${h.title}" on ${h.date}?` : 'Remove this holiday?',
+    header: 'Confirm removal',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: 'Remove',
+    rejectLabel: 'Cancel',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        await db.removeHoliday(id)
+        toastOk(toast, 'Holiday removed')
+      } catch (e) {
+        toastError(toast, e)
+      }
+    },
+  })
 }
 </script>
 

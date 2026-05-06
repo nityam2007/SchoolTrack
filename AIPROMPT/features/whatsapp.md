@@ -20,18 +20,39 @@ Selects filter: By Class / Entire School
         ↓
 System finds today's absent students
         ↓
-Preview shows recipient count + credit cost
+Preview shows recipient count + credit cost (real student name + class)
         ↓
 [Send] clicked
         ↓
-Validates credits ≥ recipient count
+Client-side soft check: credits ≥ recipient count, else toast "Insufficient credits"
         ↓
-Creates message records in DB
+Insert N rows into public.messages (RLS: messages_principal_write)
         ↓
-Deducts credits from school balance
+BEFORE-INSERT trigger decrement_school_credits_on_message():
+  · row-locks public.schools where id = NEW.school_id
+  · raises if credits < 1 → whole transaction rolls back
+  · UPDATE schools SET credits = credits - 1
+  (runs SECURITY DEFINER so the principal does not need write
+   access to the schools table)
         ↓
-Shows "✓ Sent!" for 3 seconds
+Client re-fetches schools.credits via SELECT (RLS: schools_tenant_select)
+        ↓
+Toast "Sent to N parent(s)" + topbar chip refreshes
 ```
+
+## Why a trigger instead of a client-side update
+
+The `schools` table is locked down to super admins via `schools_super_all`.
+Principals only have SELECT (`schools_tenant_select`). A previous version of
+this page tried to UPDATE `schools.credits` from the client after inserting
+messages and produced:
+
+> `new row violates row-level security policy for table "schools"`
+
+Moving the credit decrement into a `SECURITY DEFINER` trigger keeps the
+authorization model intact (principals still cannot directly mutate
+schools) while making credit accounting atomic with the message insert.
+See `supabase/migrations/0002_messages_decrement_credits.sql`.
 
 ## Message Record Schema
 

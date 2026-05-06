@@ -43,6 +43,13 @@ export default defineNuxtConfig({
     redirect: false,
   },
 
+  runtimeConfig: {
+    // Server-only. Used by /api/admin/* routes to perform admin actions
+    // (e.g. issuing impersonation tokens). NEVER expose to the client.
+    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    supabaseUrl: process.env.SUPABASE_URL,
+  },
+
   pinia: {
     storesDirs: ['./stores/**'],
   },
@@ -71,6 +78,10 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     typeCheck: false,
+  },
+
+  experimental: {
+    appManifest: false,
   },
 
   nitro: {

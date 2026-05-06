@@ -6,10 +6,13 @@ export default defineNuxtPlugin(() => {
   const db = useDbStore()
   const supabase = useSupabaseClient()
 
+  db.hydrateSelectedSchool()
+
   watch(
     () => auth.isAuthenticated,
     async (yes) => {
       if (yes && !db.loaded && !db.loading) await db.loadAll()
+      if (yes) auth.hydrateImpersonation()
       if (!yes) db.reset()
     },
     { immediate: true },

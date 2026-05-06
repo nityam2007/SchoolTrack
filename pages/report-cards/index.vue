@@ -5,11 +5,11 @@ const db = useDbStore()
 const selExamId = ref<string>('')
 
 const myExams = computed(() => {
-  if (!auth.schoolId) return []
+  if (!db.activeSchoolId) return []
   if (auth.role === 'teacher' && auth.user?.classId) {
     return db.examsForClass(auth.user.classId)
   }
-  return db.examsForSchool(auth.schoolId)
+  return db.examsForSchool(db.activeSchoolId)
 })
 watchEffect(() => {
   if (!selExamId.value && myExams.value.length) selExamId.value = myExams.value[0].id
@@ -18,7 +18,7 @@ watchEffect(() => {
 const selExam = computed(() => myExams.value.find((e) => e.id === selExamId.value) ?? null)
 
 const subjects = computed(() =>
-  auth.schoolId ? db.subjectsForSchool(auth.schoolId) : [],
+  db.activeSchoolId ? db.subjectsForSchool(db.activeSchoolId) : [],
 )
 
 const studentRows = computed(() => {

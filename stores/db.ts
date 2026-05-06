@@ -17,6 +17,9 @@ interface DbState {
   loaded: boolean
   loading: boolean
   error: string
+  // Superadmin-only: which school is being viewed via principal-scoped pages.
+  // Persisted to localStorage so it survives reloads.
+  selectedSchoolId: string | null
 }
 
 const blankState = (): DbState => ({
@@ -24,6 +27,7 @@ const blankState = (): DbState => ({
   attendance: [], holidays: [], messages: [],
   subjects: [], exams: [], marks: [],
   loaded: false, loading: false, error: '',
+  selectedSchoolId: null,
 })
 
 export const useDbStore = defineStore('db', {
@@ -47,15 +51,26 @@ export const useDbStore = defineStore('db', {
     studentMap: (s) => new Map(s.students.map((x) => [x.id, x])),
     classMap:   (s) => new Map(s.classes.map((c) => [c.id, c])),
     schoolMap:  (s) => new Map(s.schools.map((x) => [x.id, x])),
-    activeSchool(state) {
+    // Effective school id for principal-scoped views: own school for principals,
+    // explicitly selected (or first) school for superadmins, null otherwise.
+    activeSchoolId(state): string | null {
       const auth = useAuthStore()
-      return auth.schoolId ? state.schools.find((s) => s.id === auth.schoolId) ?? null : null
+      if (auth.role === 'superadmin') {
+        if (state.selectedSchoolId && state.schools.some((s) => s.id === state.selectedSchoolId)) {
+          return state.selectedSchoolId
+        }
+        return state.schools[0]?.id ?? null
+      }
+      return auth.schoolId
+    },
+    activeSchool(): School | null {
+      const id = this.activeSchoolId
+      return id ? this.schools.find((s) => s.id === id) ?? null : null
     },
     absenteesToday(state): Array<{ student_id: string; student_name: string; class_name: string; roll: string; parent_phone: string }> {
-      const auth = useAuthStore()
-      const sid = auth.schoolId
+      const sid = this.activeSchoolId
       if (!sid) return []
-      const today = new Date().toISOString().split('T')[0]
+      const today = todayLocal()
       const sm = new Map(state.students.map((x) => [x.id, x]))
       const cm = new Map(state.classes.map((c) => [c.id, c]))
       return state.attendance
@@ -102,6 +117,41 @@ export const useDbStore = defineStore('db', {
     },
 
     reset() { Object.assign(this, blankState()) },
+
+    // Superadmin school switcher.
+    setSelectedSchool(id: string | null) {
+      this.selectedSchoolId = id
+      if (import.meta.client) {
+        if (id) localStorage.setItem('st:selectedSchoolId', id)
+        else localStorage.removeItem('st:selectedSchoolId')
+      }
+    },
+    hydrateSelectedSchool() {
+      if (import.meta.client && !this.selectedSchoolId) {
+        this.selectedSchoolId = localStorage.getItem('st:selectedSchoolId')
+      }
+    },
+
+    // ── Classes ────────────────────────────────────────────────────────────
+    async addClass(c: Class) {
+      const supabase = useSb()
+      const { error } = await supabase.from('classes').insert(c)
+      if (error) throw error
+      this.classes.push(c)
+    },
+    async updateClass(id: string, patch: Partial<Class>) {
+      const supabase = useSb()
+      const { error } = await supabase.from('classes').update(patch).eq('id', id)
+      if (error) throw error
+      const i = this.classes.findIndex((x) => x.id === id)
+      if (i >= 0) this.classes[i] = { ...this.classes[i], ...patch }
+    },
+    async removeClass(id: string) {
+      const supabase = useSb()
+      const { error } = await supabase.from('classes').delete().eq('id', id)
+      if (error) throw error
+      this.classes = this.classes.filter((c) => c.id !== id)
+    },
 
     // ── Schools ────────────────────────────────────────────────────────────
     async addSchool(school: Omit<School, 'created_at'>) {
@@ -185,6 +235,27 @@ export const useDbStore = defineStore('db', {
       this.messages.push(...msgs)
     },
 
+    // ── Subjects ───────────────────────────────────────────────────────────
+    async addSubject(subject: Subject) {
+      const supabase = useSb()
+      const { error } = await supabase.from('subjects').insert(subject)
+      if (error) throw error
+      this.subjects.push(subject)
+    },
+    async updateSubject(id: string, patch: Partial<Subject>) {
+      const supabase = useSb()
+      const { error } = await supabase.from('subjects').update(patch).eq('id', id)
+      if (error) throw error
+      const i = this.subjects.findIndex((x) => x.id === id)
+      if (i >= 0) this.subjects[i] = { ...this.subjects[i], ...patch }
+    },
+    async removeSubject(id: string) {
+      const supabase = useSb()
+      const { error } = await supabase.from('subjects').delete().eq('id', id)
+      if (error) throw error
+      this.subjects = this.subjects.filter((x) => x.id !== id)
+    },
+
     // ── Exams / Marks ──────────────────────────────────────────────────────
     async addExam(exam: Exam) {
       const supabase = useSb()
@@ -198,6 +269,13 @@ export const useDbStore = defineStore('db', {
       if (error) throw error
       const i = this.exams.findIndex((e) => e.id === id)
       if (i >= 0) this.exams[i] = { ...this.exams[i], ...patch }
+    },
+    async removeExam(id: string) {
+      const supabase = useSb()
+      const { error } = await supabase.from('exams').delete().eq('id', id)
+      if (error) throw error
+      this.exams = this.exams.filter((e) => e.id !== id)
+      this.marks = this.marks.filter((m) => m.exam_id !== id)
     },
     async upsertMarks(rows: Omit<Marks, 'id' | 'updated_at'>[]) {
       if (!rows.length) return

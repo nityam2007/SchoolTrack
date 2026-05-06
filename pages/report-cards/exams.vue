@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import type { Exam, ExamStatus } from '~/types/database'
 
-const auth = useAuthStore()
 const db = useDbStore()
 const toast = useToast()
+const confirm = useConfirm()
 
-definePageMeta({
-  // Principal-only route — middleware below enforces.
-  middleware: ['principal-only'],
-})
+definePageMeta({ middleware: ['principal-only'] })
+
+const sid = computed(() => db.activeSchoolId)
 
 const showNew = ref(false)
 const form = reactive<Partial<Exam>>({
@@ -17,20 +16,20 @@ const form = reactive<Partial<Exam>>({
 
 const PRESETS = ['Unit Test 1', 'Unit Test 2', 'Half Yearly', 'Pre-Final', 'Final Examination', 'Sessional']
 
-const classes = computed(() => (auth.schoolId ? db.classesForSchool(auth.schoolId) : []))
-const exams = computed(() => (auth.schoolId ? db.examsForSchool(auth.schoolId) : []))
+const classes = computed(() => (sid.value ? db.classesForSchool(sid.value) : []))
+const exams = computed(() => (sid.value ? db.examsForSchool(sid.value) : []))
 
-const subjectsCount = computed(() => (auth.schoolId ? db.subjectsForSchool(auth.schoolId).length : 0))
+const subjectsCount = computed(() => (sid.value ? db.subjectsForSchool(sid.value).length : 0))
 
 const create = async () => {
-  if (!auth.schoolId || !form.name || !form.class_id) {
+  if (!sid.value || !form.name || !form.class_id) {
     toast.add({ severity: 'warn', summary: 'Name and class are required', life: 3000 })
     return
   }
   try {
     await db.addExam({
-      id: `EX${Date.now().toString(36).toUpperCase()}`,
-      school_id: auth.schoolId,
+      id: makeId('EX'),
+      school_id: sid.value,
       class_id: form.class_id!,
       name: form.name!,
       date_label: form.date_label ?? '',
@@ -38,22 +37,39 @@ const create = async () => {
       max_marks: Number(form.max_marks ?? 100),
       status: 'upcoming',
     })
-    toast.add({ severity: 'success', summary: 'Exam created', life: 2000 })
+    toastOk(toast, 'Exam created')
     showNew.value = false
     Object.assign(form, { name: '', class_id: '', date_label: '', session: '2025-26', max_marks: 100 })
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Failed', detail: (e as Error).message, life: 4000 })
+    toastError(toast, e)
   }
 }
 
 const cycleStatus = async (e: Exam) => {
   const next: Record<ExamStatus, ExamStatus> = { upcoming: 'open', open: 'closed', closed: 'upcoming' }
   try { await db.updateExam(e.id, { status: next[e.status] }) }
-  catch (err) { toast.add({ severity: 'error', summary: 'Failed', detail: (err as Error).message, life: 4000 }) }
+  catch (err) { toastError(toast, err) }
 }
 
 const cycleLabel = (s: ExamStatus) =>
   s === 'upcoming' ? 'Open for Entry' : s === 'open' ? 'Close Exam' : 'Re-open'
+
+const removeExam = (e: Exam) => {
+  confirm.require({
+    message: `Delete exam "${e.name}"? All marks entered for this exam will be lost. Cannot be undone.`,
+    header: 'Delete exam',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: 'Delete',
+    rejectLabel: 'Cancel',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        await db.removeExam(e.id)
+        toastOk(toast, 'Exam deleted')
+      } catch (err) { toastError(toast, err) }
+    },
+  })
+}
 </script>
 
 <template>
@@ -137,6 +153,14 @@ const cycleLabel = (s: ExamStatus) =>
             class="flex-1"
             size="small"
             @click="cycleStatus(ex)"
+          />
+          <Button
+            icon="pi pi-trash"
+            severity="danger"
+            outlined
+            size="small"
+            aria-label="Delete exam"
+            @click="removeExam(ex)"
           />
         </div>
       </div>

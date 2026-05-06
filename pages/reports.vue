@@ -1,10 +1,11 @@
 <script setup lang="ts">
-const auth = useAuthStore()
+definePageMeta({ middleware: ['principal-only'] })
+
 const db = useDbStore()
 
 const breakdown = computed(() => {
-  if (!auth.schoolId) return []
-  return db.classesForSchool(auth.schoolId).map((c) => {
+  if (!db.activeSchoolId) return []
+  return db.classesForSchool(db.activeSchoolId).map((c) => {
     const att = db.attendance.filter((a) => a.class_id === c.id)
     const present = att.filter((a) => a.status === 'present').length
     const total = att.length

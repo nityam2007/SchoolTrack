@@ -5,10 +5,11 @@
 ```
 supabase/
 ├── migrations/
-│   └── 0001_init.sql       canonical drop+rebuild schema with RLS
-└── seed.sql                reference data (schools, classes, students, …)
+│   ├── 0001_init.sql                         canonical drop+rebuild schema with RLS
+│   └── 0002_messages_decrement_credits.sql   trigger: auto-deduct credit on message insert
+└── seed.sql                                  reference data (schools, classes, students, …)
 scripts/
-└── seed-users.mjs          creates demo auth.users via service-role admin API
+└── seed-users.mjs                            creates demo auth.users via service-role admin API
 ```
 
 ## One-time Setup
@@ -20,10 +21,13 @@ vercel pull --yes
 # 2. Apply schema (DROPs + recreates all public tables — destructive)
 psql "$POSTGRES_URL_NON_POOLING" -f supabase/migrations/0001_init.sql
 
-# 3. Seed reference data
+# 3. Apply per-feature triggers / additive migrations
+psql "$POSTGRES_URL_NON_POOLING" -f supabase/migrations/0002_messages_decrement_credits.sql
+
+# 4. Seed reference data
 psql "$POSTGRES_URL_NON_POOLING" -f supabase/seed.sql
 
-# 4. Seed demo auth users (Super Admin / Principals / Teachers)
+# 5. Seed demo auth users (Super Admin / Principals / Teachers)
 node scripts/seed-users.mjs
 ```
 
@@ -54,6 +58,18 @@ public.is_super_admin()     -- bool
 
 All four are `security definer` so they can read `profiles` from inside
 RLS policies without recursion.
+
+## SECURITY DEFINER mutators
+
+Some operations need to update tables the calling role can't write to. We
+keep authorization at the RLS-policy layer for the *triggering* row and let
+the trigger function (running as the table owner) update the dependent row.
+
+| Function | Defined in | Why it's `SECURITY DEFINER` |
+|---|---|---|
+| `handle_new_user` | `0001_init.sql` | Inserts `profiles` row from `auth.users` insert (`profiles` has no INSERT policy for clients). |
+| `sync_profile_from_app_metadata` | `0001_init.sql` | Mirrors `auth.users.app_metadata` changes into `profiles`. |
+| `decrement_school_credits_on_message` | `0002_messages_decrement_credits.sql` | Decrements `schools.credits` on every `messages` insert. Principals have no write policy on `schools` (`schools_super_all` is super-admin-only). The trigger row-locks the school, refuses inserts when `credits < 1`, and decrements atomically. |
 
 ## Client Pattern
 
