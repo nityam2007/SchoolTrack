@@ -7,6 +7,9 @@ const confirm = useConfirm()
 
 definePageMeta({ middleware: ['principal-only'] })
 
+// Marks are lazy-loaded (not part of the eager startup load).
+onMounted(() => db.ensureMarks())
+
 const sid = computed(() => db.activeSchoolId)
 
 const showNew = ref(false)

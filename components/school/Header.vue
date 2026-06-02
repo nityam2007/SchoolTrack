@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { School } from '~/types/database'
 const props = defineProps<{ school: School }>()
-const emit = defineEmits<{ topup: []; toggle: [] }>()
+const emit = defineEmits<{ topup: []; toggle: []; edit: [] }>()
 </script>
 
 <template>
@@ -10,8 +10,9 @@ const emit = defineEmits<{ topup: []; toggle: [] }>()
       <NuxtLink to="/schools">
         <Button icon="pi pi-arrow-left" severity="secondary" text rounded aria-label="Back to schools" />
       </NuxtLink>
-      <div class="w-14 h-14 rounded-card bg-accentSoft ring-1 ring-accent/20 flex items-center justify-center">
-        <i class="pi pi-building text-accent text-2xl" />
+      <div class="w-14 h-14 rounded-card border border-line bg-accentSoft overflow-hidden flex items-center justify-center shrink-0">
+        <img v-if="school.logo_url" :src="school.logo_url" :alt="`${school.name} logo`" class="w-full h-full object-cover">
+        <i v-else class="pi pi-building text-accent text-2xl" />
       </div>
       <div>
         <p class="text-muted text-xs font-semibold uppercase tracking-wider">School · {{ school.id }}</p>
@@ -27,6 +28,7 @@ const emit = defineEmits<{ topup: []; toggle: [] }>()
       </div>
     </div>
     <div class="flex gap-2">
+      <Button label="Edit" icon="pi pi-pencil" severity="secondary" outlined @click="emit('edit')" />
       <Button label="Top up credits" icon="pi pi-credit-card" severity="secondary" outlined @click="emit('topup')" />
       <Button
         :label="school.active ? 'Disable school' : 'Enable school'"

@@ -12,7 +12,21 @@ export interface School {
   city: string
   credits: number
   active: boolean
+  logo_url?: string | null
   created_at?: string
+}
+
+export type CreditTxnKind = 'recharge' | 'deduction' | 'adjustment'
+
+export interface CreditTxn {
+  id: string
+  school_id: string
+  kind: CreditTxnKind
+  amount: number          // signed: +recharge / -deduction
+  balance_after: number | null
+  note: string
+  actor_email: string
+  created_at: string
 }
 
 export interface Class {
@@ -44,6 +58,7 @@ export interface Student {
   father_name: string | null
   mother_name: string | null
   attendance_pct: number
+  previous_class_id?: string | null
 }
 
 export interface Attendance {
@@ -72,6 +87,50 @@ export interface Message {
   parent_phone: string
   date: string
   status: MessageStatus
+  body?: string
+  attachment_url?: string | null
+  recipient_type?: 'student' | 'class' | 'school'
+}
+
+export interface StaffMessage {
+  id: string
+  school_id: string
+  from_email: string
+  to_teacher_id: string | null   // null = all teachers
+  subject: string
+  body: string
+  created_at: string
+}
+
+export type AuditAction =
+  | 'create' | 'update' | 'delete' | 'login' | 'logout'
+  | 'page_view' | 'message' | 'export' | 'import' | 'promote' | 'credit'
+
+export interface AuditLog {
+  id: string
+  actor_id: string | null
+  actor_email: string
+  role: string
+  action: AuditAction | string
+  entity: string
+  entity_id: string | null
+  school_id: string | null
+  path: string | null
+  ip: string | null
+  detail: Record<string, unknown> | null
+  created_at: string
+}
+
+export interface CreditRequest {
+  id: string
+  school_id: string
+  amount: number
+  note: string
+  status: 'pending' | 'approved' | 'rejected'
+  requested_by: string
+  resolved_by: string | null
+  created_at: string
+  resolved_at: string | null
 }
 
 export interface Subject {

@@ -9,7 +9,7 @@ const showViewAs = ref(false)
 const userMenuItems = computed(() => {
   const items: Array<Record<string, unknown>> = [
     { label: 'Account settings', icon: 'pi pi-user', disabled: true },
-    { label: 'Reload data', icon: 'pi pi-refresh', command: () => db.loadAll() },
+    { label: 'Reload data', icon: 'pi pi-refresh', command: () => db.reload() },
   ]
   // Superadmins (real, not currently impersonating) can start impersonation.
   const realRole = auth.realUser?.role ?? auth.role
@@ -48,6 +48,8 @@ const PAGE_TITLES: Record<string, string> = {
   'mark-attendance': 'Mark Attendance',
   'my-class': 'My Class',
   'report-cards': 'Report Cards',
+  billing: 'Billing',
+  logs: 'Activity Logs',
 }
 const pageTitle = computed(() => {
   const seg = route.path.split('/').filter(Boolean)[0] ?? 'dashboard'
@@ -64,7 +66,7 @@ const creditsTone = computed(() => {
 
 <template>
   <header
-    class="h-16 border-b border-line bg-bg/70 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between px-6"
+    class="h-16 shrink-0 border-b border-line bg-card/80 backdrop-blur-xl flex items-center justify-between px-5 lg:px-8"
   >
     <div class="min-w-0 flex items-baseline gap-3">
       <h1 class="text-lg font-bold tracking-tight truncate">{{ pageTitle }}</h1>

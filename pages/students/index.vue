@@ -73,17 +73,32 @@ const remove = (id: string) => {
 }
 
 const open = (s: Student) => router.push(`/students/${s.id}`)
+
+const showImport = ref(false)
+const exportCsv = () => {
+  const rows = filtered.value.map((s) => ({
+    name: s.name, roll: s.roll, class: s.class_name,
+    parent_phone: s.parent_phone, dob: s.dob ?? '', gender: s.gender ?? '',
+    father_name: s.father_name ?? '', mother_name: s.mother_name ?? '',
+  }))
+  downloadFile(
+    toCsv(rows, ['name', 'roll', 'class', 'parent_phone', 'dob', 'gender', 'father_name', 'mother_name']),
+    'students.csv',
+  )
+}
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <h2 class="st-h2 m-0">Students</h2>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 flex-wrap">
         <IconField>
           <InputIcon class="pi pi-search" />
           <InputText v-model="search" placeholder="Search name or roll..." class="w-64" />
         </IconField>
+        <Button label="Export" icon="pi pi-download" severity="secondary" outlined @click="exportCsv" />
+        <Button label="Import CSV" icon="pi pi-upload" severity="secondary" outlined @click="showImport = true" />
         <Button label="Add Student" icon="pi pi-plus" @click="showAdd = true" />
       </div>
     </div>
@@ -156,5 +171,7 @@ const open = (s: Student) => router.push(`/students/${s.id}`)
         <Button label="Add Student" @click="submit" />
       </div>
     </Dialog>
+
+    <StudentImportDialog v-model:visible="showImport" />
   </div>
 </template>

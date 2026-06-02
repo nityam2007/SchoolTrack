@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { REPORT_TEMPLATES } from '~/composables/useReportTemplate'
+
 const auth = useAuthStore()
 const db = useDbStore()
 
-const selExamId = ref<string>('')
+// Marks are lazy-loaded (not part of the eager startup load).
+onMounted(() => db.ensureMarks())
 
+const { template, setTemplate } = useReportTemplate()
+const selExamId = ref<string>('')
+const classFilter = ref<string>('')
+
+const allClasses = computed(() => (db.activeSchoolId ? db.classesForSchool(db.activeSchoolId) : []))
 const myExams = computed(() => {
   if (!db.activeSchoolId) return []
   if (auth.role === 'teacher' && auth.user?.classId) {
@@ -11,8 +19,13 @@ const myExams = computed(() => {
   }
   return db.examsForSchool(db.activeSchoolId)
 })
+const filteredExams = computed(() =>
+  classFilter.value ? myExams.value.filter((e) => e.class_id === classFilter.value) : myExams.value,
+)
 watchEffect(() => {
-  if (!selExamId.value && myExams.value.length) selExamId.value = myExams.value[0].id
+  if (filteredExams.value.length && !filteredExams.value.some((e) => e.id === selExamId.value)) {
+    selExamId.value = filteredExams.value[0].id
+  }
 })
 
 const selExam = computed(() => myExams.value.find((e) => e.id === selExamId.value) ?? null)
@@ -66,10 +79,19 @@ const total = computed(() => studentRows.value.length)
     </div>
 
     <div class="st-card">
-      <p class="font-bold mb-3">Select Examination</p>
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+        <p class="font-bold m-0">Select Examination</p>
+        <div v-if="auth.role !== 'teacher' && allClasses.length" class="flex items-center gap-2">
+          <span class="st-label">Class</span>
+          <select v-model="classFilter" class="h-9 px-3 rounded-ctl bg-surface border border-line text-sm text-ink outline-none focus:border-accent">
+            <option value="">All classes</option>
+            <option v-for="c in allClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+      </div>
       <div class="flex gap-2 flex-wrap">
         <button
-          v-for="ex in myExams"
+          v-for="ex in filteredExams"
           :key="ex.id"
           type="button"
           class="px-4 py-2.5 rounded-ctl border text-sm transition-colors flex flex-col items-start gap-0.5"
@@ -83,8 +105,8 @@ const total = computed(() => studentRows.value.length)
           <span>{{ ex.name }}</span>
           <span class="text-[11px] opacity-80">{{ ex.date_label }} · {{ ex.status }}</span>
         </button>
-        <span v-if="!myExams.length" class="text-muted text-sm py-2">
-          No exams configured yet.
+        <span v-if="!filteredExams.length" class="text-muted text-sm py-2">
+          No exams {{ classFilter ? 'for this class' : 'configured yet' }}.
         </span>
       </div>
     </div>
@@ -95,11 +117,18 @@ const total = computed(() => studentRows.value.length)
           <p class="font-bold m-0">Students — {{ selExam.name }}</p>
           <p class="text-muted text-xs m-0 mt-0.5">{{ total }} students</p>
         </div>
-        <div class="flex gap-2">
-          <NuxtLink
-            v-if="auth.role === 'teacher'"
-            :to="`/report-cards/marks/${selExam.id}`"
+        <div class="flex items-center gap-2 flex-wrap">
+          <select
+            :value="template"
+            class="h-9 px-3 rounded-ctl bg-surface border border-line text-sm text-ink outline-none focus:border-accent"
+            @change="setTemplate(($event.target as HTMLSelectElement).value as any)"
           >
+            <option v-for="t in REPORT_TEMPLATES" :key="t.id" :value="t.id">{{ t.label }}</option>
+          </select>
+          <NuxtLink :to="`/report-cards/${selExam.id}/all`">
+            <Button label="Download all" icon="pi pi-download" severity="secondary" outlined />
+          </NuxtLink>
+          <NuxtLink v-if="auth.role === 'teacher'" :to="`/report-cards/marks/${selExam.id}`">
             <Button label="Enter Marks" icon="pi pi-pencil" severity="warn" />
           </NuxtLink>
         </div>

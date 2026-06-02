@@ -5,6 +5,9 @@ const db = useDbStore()
 const route = useRoute()
 const toast = useToast()
 
+// Marks are lazy-loaded (not part of the eager startup load).
+onMounted(() => db.ensureMarks())
+
 const examId = computed(() => route.params.examId as string)
 const exam = computed(() => db.exams.find((e) => e.id === examId.value) ?? null)
 const subjects = computed(() => (db.activeSchoolId ? db.subjectsForSchool(db.activeSchoolId) : []))

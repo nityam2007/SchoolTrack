@@ -14,42 +14,45 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'DM Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        sans: ['Geist', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Host Grotesk', 'Geist', 'Inter', 'sans-serif'],
+        mono: ['Geist Mono', 'JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
-        // Layered surface palette — each step a few luminance points up.
-        bg:        '#080B14',  // page background, deeper than card
-        surface:   '#0F1424',  // sidebar, inputs
-        surface2:  '#141A2D',  // hover surface
-        card:      '#161D2E',  // cards, panels
-        card2:     '#1B243A',  // raised cards (modals, hover)
-        line:      '#1F2A44',  // borders
-        line2:     '#2A3553',  // hover borders
-        // Brand
-        accent:     '#3B82F6',
-        accentSoft: 'rgba(59,130,246,0.12)',
-        accentGlow: 'rgba(59,130,246,0.18)',
-        accentRing: 'rgba(59,130,246,0.35)',
-        // Status
-        ok:     '#10B981',
-        danger: '#EF4444',
-        warn:   '#F59E0B',
-        violet: '#8B5CF6',
+        // ── Light "Alytics" palette ──────────────────────────────────────
+        // Layered surface palette — each step a touch darker/cooler.
+        bg:        '#e9eef9',  // page background (periwinkle frame margin)
+        surface:   '#ffffff',  // sidebar, inputs base
+        surface2:  '#f4f5f8',  // hover surface (light gray)
+        card:      '#ffffff',  // cards, panels
+        card2:     '#fbfcfe',  // raised cards (modals, hover)
+        line:      '#ebebeb',  // borders
+        line2:     '#e0e1e6',  // hover borders
+        // Brand — Alytics blue
+        accent:     '#126dfb',
+        accentSoft: '#e6efff',
+        accentGlow: 'rgba(18,109,251,0.15)',
+        accentRing: 'rgba(18,109,251,0.30)',
+        // Status (tuned for contrast on white)
+        ok:     '#0a9d63',
+        danger: '#ef4444',
+        warn:   '#e0890b',
+        violet: '#7c5cff',
         // Text
-        ink:    '#F1F5F9',
-        muted:  '#7B8BA7',
-        light:  '#A8B5CC',
+        ink:    '#0b0b0d',  // headings / primary
+        light:  '#575757',  // body / secondary (nav inactive)
+        muted:  '#8e8e96',  // tertiary / small labels / placeholders
       },
       borderRadius: {
-        card: '14px',
-        ctl: '10px',
+        card: '20px',
+        ctl:  '12px',
+        frame: '28px',
       },
       boxShadow: {
-        card: '0 1px 0 0 rgba(255,255,255,0.04) inset, 0 8px 24px -12px rgba(0,0,0,0.5)',
-        glow: '0 0 0 4px rgba(59,130,246,0.18)',
-        pop:  '0 16px 48px -16px rgba(0,0,0,0.6), 0 1px 0 0 rgba(255,255,255,0.04) inset',
+        card:  '0 1px 2px 0 rgba(16,24,40,0.04), 0 1px 3px 0 rgba(16,24,40,0.03)',
+        glow:  '0 0 0 4px rgba(18,109,251,0.12)',
+        pop:   '0 16px 40px -16px rgba(16,24,40,0.18)',
+        frame: '0 24px 60px -28px rgba(18,109,251,0.28)',
       },
       animation: {
         'fade-in': 'fadeIn .25s ease-out',

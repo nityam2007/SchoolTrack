@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type {
-  Attendance, Class, Exam, Holiday, Marks, Message, School, Student, Subject, Teacher,
+  Attendance, AuditLog, Class, CreditRequest, CreditTxn, Exam, Holiday, Marks, Message,
+  School, StaffMessage, Student, Subject, Teacher,
 } from '~/types/database'
 
 interface DbState {
@@ -14,8 +15,16 @@ interface DbState {
   subjects: Subject[]
   exams: Exam[]
   marks: Marks[]
-  loaded: boolean
+  creditTxns: CreditTxn[]      // ledger for the school currently being viewed
+  creditRequests: CreditRequest[]
+  staffMessages: StaffMessage[]
+  auditLogs: AuditLog[]        // loaded on demand for the Logs page
+  loaded: boolean          // phase-1 (core) tables ready — UI can paint
   loading: boolean
+  activityLoaded: boolean  // phase-2 (attendance, messages) ready
+  activityLoading: boolean
+  marksLoaded: boolean     // marks lazily loaded (report cards only)
+  marksLoading: boolean
   error: string
   // Superadmin-only: which school is being viewed via principal-scoped pages.
   // Persisted to localStorage so it survives reloads.
@@ -25,8 +34,12 @@ interface DbState {
 const blankState = (): DbState => ({
   schools: [], classes: [], teachers: [], students: [],
   attendance: [], holidays: [], messages: [],
-  subjects: [], exams: [], marks: [],
-  loaded: false, loading: false, error: '',
+  subjects: [], exams: [], marks: [], creditTxns: [],
+  creditRequests: [], staffMessages: [], auditLogs: [],
+  loaded: false, loading: false,
+  activityLoaded: false, activityLoading: false,
+  marksLoaded: false, marksLoading: false,
+  error: '',
   selectedSchoolId: null,
 })
 
@@ -89,31 +102,85 @@ export const useDbStore = defineStore('db', {
   },
 
   actions: {
-    /** Load every collection visible to the current user (RLS enforced). */
+    // Internal: fetch a set of tables in parallel and assign onto state.
+    async _fetchTables(tables: readonly string[]) {
+      const supabase = useSb()
+      const results = await Promise.all(
+        tables.map((t) => supabase.from(t).select('*').then((r) => ({ t, r }))),
+      )
+      for (const { t, r } of results) {
+        if (r.error) throw new Error(`${t}: ${r.error.message}`)
+        ;(this as unknown as Record<string, unknown[]>)[t] = (r.data ?? []) as unknown[]
+      }
+    },
+
+    /**
+     * Hydrate the store for the signed-in user (RLS enforced).
+     *
+     * Two phases so first paint is fast:
+     *  1. Core tables (bounded by school structure) — awaited; flips `loaded`
+     *     so the shell + dashboards can render immediately.
+     *  2. Activity tables (attendance, messages — grow daily) — loaded in the
+     *     background via `loadActivity()`; pages read them reactively.
+     *
+     * `marks` (the largest table, used only by report cards) is NOT loaded here
+     * — it is fetched on demand by `ensureMarks()`.
+     */
     async loadAll() {
-      if (this.loading) return
+      if (this.loading || this.loaded) return
       this.loading = true
       this.error = ''
-      const supabase = useSb()
-      const tables = [
-        'schools', 'classes', 'teachers', 'students',
-        'attendance', 'holidays', 'messages',
-        'subjects', 'exams', 'marks',
-      ] as const
       try {
-        const results = await Promise.all(
-          tables.map((t) => supabase.from(t).select('*').then((r) => ({ t, r }))),
-        )
-        for (const { t, r } of results) {
-          if (r.error) throw new Error(`${t}: ${r.error.message}`)
-          ;(this as unknown as Record<string, unknown[]>)[t] = (r.data ?? []) as unknown[]
-        }
+        await this._fetchTables([
+          'schools', 'classes', 'teachers', 'students',
+          'subjects', 'exams', 'holidays',
+        ])
         this.loaded = true
       } catch (e) {
         this.error = (e as Error).message
       } finally {
         this.loading = false
       }
+      // Kick off the background phase without blocking first paint.
+      if (this.loaded) this.loadActivity()
+    },
+
+    /** Phase 2 — daily-growth tables, loaded in the background. Non-fatal. */
+    async loadActivity() {
+      if (this.activityLoading || this.activityLoaded) return
+      this.activityLoading = true
+      try {
+        await this._fetchTables(['attendance', 'messages'])
+        this.activityLoaded = true
+      } catch (e) {
+        if (!this.error) this.error = (e as Error).message
+      } finally {
+        this.activityLoading = false
+      }
+    },
+
+    /** Lazily load `marks` the first time a report-card / exam view needs it. */
+    async ensureMarks() {
+      if (this.marksLoaded || this.marksLoading) return
+      this.marksLoading = true
+      try {
+        await this._fetchTables(['marks'])
+        this.marksLoaded = true
+      } catch (e) {
+        if (!this.error) this.error = (e as Error).message
+      } finally {
+        this.marksLoading = false
+      }
+    },
+
+    /** Force a full re-fetch (e.g. the "Reload data" menu action). */
+    async reload() {
+      const hadMarks = this.marksLoaded
+      this.loaded = false
+      this.activityLoaded = false
+      this.marksLoaded = false
+      await this.loadAll()
+      if (hadMarks) await this.ensureMarks()
     },
 
     reset() { Object.assign(this, blankState()) },
@@ -167,10 +234,122 @@ export const useDbStore = defineStore('db', {
       const i = this.schools.findIndex((s) => s.id === id)
       if (i >= 0) this.schools[i] = { ...this.schools[i], ...patch }
     },
-    async topUpCredits(school_id: string, amount: number) {
+    async topUpCredits(school_id: string, amount: number, note = '') {
       const s = this.schools.find((x) => x.id === school_id)
-      if (!s) return
-      await this.updateSchool(school_id, { credits: s.credits + amount })
+      if (!s || amount <= 0) return
+      const balanceAfter = s.credits + amount
+      await this.updateSchool(school_id, { credits: balanceAfter })
+      await this.logCreditTxn(school_id, 'recharge', amount, balanceAfter, note)
+    },
+
+    /** Remove credits (super-admin correction). Clamps the balance at zero. */
+    async removeCredits(school_id: string, amount: number, note = '') {
+      const s = this.schools.find((x) => x.id === school_id)
+      if (!s || amount <= 0) return
+      const delta = Math.min(amount, s.credits)
+      const balanceAfter = s.credits - delta
+      await this.updateSchool(school_id, { credits: balanceAfter })
+      await this.logCreditTxn(school_id, 'adjustment', -delta, balanceAfter, note)
+    },
+
+    /** Append a ledger row. Best-effort: ignored if the table isn't present. */
+    async logCreditTxn(
+      school_id: string,
+      kind: CreditTxn['kind'],
+      amount: number,
+      balance_after: number,
+      note = '',
+    ) {
+      const supabase = useSb()
+      const auth = useAuthStore()
+      const { data, error } = await supabase
+        .from('credit_transactions')
+        .insert({ school_id, kind, amount, balance_after, note, actor_email: auth.user?.email ?? '' })
+        .select()
+      if (error) return // ledger table may not be migrated yet — non-fatal
+      const row = (data?.[0] ?? null) as CreditTxn | null
+      if (row && this.creditTxns[0]?.school_id === school_id) this.creditTxns.unshift(row)
+    },
+
+    /** Load the credit ledger for one school (recharge + deduction history). */
+    async loadCreditTxns(school_id: string) {
+      const supabase = useSb()
+      const { data, error } = await supabase
+        .from('credit_transactions')
+        .select('*')
+        .eq('school_id', school_id)
+        .order('created_at', { ascending: false })
+      this.creditTxns = error ? [] : ((data ?? []) as CreditTxn[])
+    },
+
+    // ── Credit requests (principal asks; superadmin approves) ───────────────
+    async loadCreditRequests() {
+      const supabase = useSb()
+      const { data, error } = await supabase
+        .from('credit_requests').select('*').order('created_at', { ascending: false })
+      this.creditRequests = error ? [] : ((data ?? []) as CreditRequest[])
+    },
+    async addCreditRequest(school_id: string, amount: number, note = '') {
+      const supabase = useSb()
+      const auth = useAuthStore()
+      const { data, error } = await supabase.from('credit_requests')
+        .insert({ school_id, amount, note, requested_by: auth.user?.email ?? '' }).select()
+      if (error) throw error
+      const row = data?.[0] as CreditRequest | undefined
+      if (row) this.creditRequests.unshift(row)
+    },
+    async resolveCreditRequest(id: string, approve: boolean) {
+      const supabase = useSb()
+      const auth = useAuthStore()
+      const req = this.creditRequests.find((r) => r.id === id)
+      if (!req) return
+      const status: CreditRequest['status'] = approve ? 'approved' : 'rejected'
+      const { error } = await supabase.from('credit_requests')
+        .update({ status, resolved_by: auth.user?.email ?? '', resolved_at: new Date().toISOString() })
+        .eq('id', id)
+      if (error) throw error
+      if (approve) await this.topUpCredits(req.school_id, req.amount, `Approved request · ${req.requested_by}`)
+      req.status = status
+    },
+
+    // ── Staff messages (principal → teachers) ───────────────────────────────
+    async loadStaffMessages() {
+      const supabase = useSb()
+      const { data, error } = await supabase
+        .from('staff_messages').select('*').order('created_at', { ascending: false })
+      this.staffMessages = error ? [] : ((data ?? []) as StaffMessage[])
+    },
+    async addStaffMessage(msg: { school_id: string; to_teacher_id: string | null; subject: string; body: string }) {
+      const supabase = useSb()
+      const auth = useAuthStore()
+      const { data, error } = await supabase.from('staff_messages')
+        .insert({ ...msg, from_email: auth.user?.email ?? '' }).select()
+      if (error) throw error
+      const row = data?.[0] as StaffMessage | undefined
+      if (row) this.staffMessages.unshift(row)
+    },
+
+    // ── Audit logs (Logs page) ──────────────────────────────────────────────
+    async loadAuditLogs(limit = 1000) {
+      const supabase = useSb()
+      const { data, error } = await supabase
+        .from('audit_logs').select('*').order('created_at', { ascending: false }).limit(limit)
+      this.auditLogs = error ? [] : ((data ?? []) as AuditLog[])
+    },
+
+    // ── Student promotion (class upgrade, keeps old class as history) ───────
+    async promoteStudents(ids: string[], targetClassId: string) {
+      if (!ids.length) return
+      const supabase = useSb()
+      for (const id of ids) {
+        const s = this.students.find((x) => x.id === id)
+        if (!s) continue
+        const { error } = await supabase.from('students')
+          .update({ previous_class_id: s.class_id, class_id: targetClassId }).eq('id', id)
+        if (error) throw error
+        s.previous_class_id = s.class_id
+        s.class_id = targetClassId
+      }
     },
 
     // ── Students ───────────────────────────────────────────────────────────
@@ -185,6 +364,14 @@ export const useDbStore = defineStore('db', {
       const { error } = await supabase.from('students').delete().eq('id', id)
       if (error) throw error
       this.students = this.students.filter((s) => s.id !== id)
+    },
+    /** Bulk insert (CSV import). Returns the inserted rows. */
+    async addStudents(students: Student[]) {
+      if (!students.length) return
+      const supabase = useSb()
+      const { error } = await supabase.from('students').insert(students)
+      if (error) throw error
+      this.students.push(...students)
     },
 
     // ── Teachers ───────────────────────────────────────────────────────────

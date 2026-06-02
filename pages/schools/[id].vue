@@ -7,6 +7,7 @@ const toast = useToast()
 const confirm = useConfirm()
 
 const showTopUp = ref(false)
+const showEdit = ref(false)
 
 const tabs = computed(() => [
   { label: 'Overview', icon: 'pi pi-th-large', to: `/schools/${id.value}` },
@@ -48,10 +49,11 @@ const onToggle = () => {
 
 <template>
   <div v-if="school" class="flex flex-col gap-6 animate-fade-in">
-    <SchoolHeader :school="school" @topup="showTopUp = true" @toggle="onToggle" />
+    <SchoolHeader :school="school" @topup="showTopUp = true" @toggle="onToggle" @edit="showEdit = true" />
     <DetailTabs :tabs="tabs" />
     <NuxtPage />
     <SchoolTopUpDialog v-model:visible="showTopUp" :school="school" @submit="onTopUp" />
+    <SchoolEditDialog v-model:visible="showEdit" :school="school" />
   </div>
   <EmptyState
     v-else-if="db.loaded"

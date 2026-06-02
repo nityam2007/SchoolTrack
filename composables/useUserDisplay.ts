@@ -1,9 +1,9 @@
 import type { Role } from '~/types/database'
 
-export const ROLE_META: Record<Role, { label: string; tone: string; chipTone: string }> = {
-  superadmin:  { label: 'Super Admin', tone: 'text-violet bg-violet/10 ring-violet/20',  chipTone: 'bg-violet/10 text-violet' },
-  schooladmin: { label: 'Principal',   tone: 'text-accent bg-accentSoft ring-accent/25', chipTone: 'bg-accentSoft text-accent' },
-  teacher:     { label: 'Teacher',     tone: 'text-ok bg-ok/10 ring-ok/25',              chipTone: 'bg-ok/10 text-ok' },
+export const ROLE_META: Record<Role, { label: string; tone: string; chipTone: string; avatar: string }> = {
+  superadmin:  { label: 'Super Admin', tone: 'text-violet bg-violet/10 ring-violet/20',  chipTone: 'bg-violet/10 text-violet', avatar: 'bg-gradient-to-br from-violet to-accent' },
+  schooladmin: { label: 'Principal',   tone: 'text-accent bg-accentSoft ring-accent/25', chipTone: 'bg-accentSoft text-accent', avatar: 'bg-gradient-to-br from-accent to-[#0099ff]' },
+  teacher:     { label: 'Teacher',     tone: 'text-ok bg-ok/10 ring-ok/25',              chipTone: 'bg-ok/10 text-ok',         avatar: 'bg-gradient-to-br from-ok to-[#0d9488]' },
 }
 
 const NAME_PREFIX = /^(Principal — |Mr\.|Ms\.|Mrs\.) ?/
@@ -37,7 +37,7 @@ export const useUserDisplay = () => {
   const firstName = computed(() => toFirstName(auth.user?.name))
   const greeting = computed(() => greetingFor(new Date().getHours()))
   const roleMeta = computed(() =>
-    auth.user?.role ? ROLE_META[auth.user.role] : { label: '', tone: '', chipTone: '' },
+    auth.user?.role ? ROLE_META[auth.user.role] : { label: '', tone: '', chipTone: '', avatar: '' },
   )
   return { initials, firstName, greeting, roleMeta }
 }

@@ -23,25 +23,32 @@ const SECTIONS = {
   reportcards:   { key: 'reportcards',   label: 'Report Cards',    icon: 'pi pi-file',         to: '/report-cards' },
   markattendance:{ key: 'markattendance',label: 'Mark Attendance', icon: 'pi pi-check-square', to: '/mark-attendance' },
   myclass:       { key: 'myclass',       label: 'My Class',        icon: 'pi pi-list',         to: '/my-class' },
+  billing:       { key: 'billing',       label: 'Billing',         icon: 'pi pi-wallet',       to: '/billing' },
+  logs:          { key: 'logs',          label: 'Activity Logs',   icon: 'pi pi-history',      to: '/logs' },
 } as const
 
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
+  // Master admin = platform-level only. School-level modules (classes,
+  // teachers, students, attendance, subjects, holidays, messages, reports,
+  // report cards) are reached by impersonating a school, not from this nav.
   superadmin: [
     SECTIONS.dashboard,
-    SECTIONS.schools, SECTIONS.credits, SECTIONS.analytics,
-    SECTIONS.classes, SECTIONS.attendance, SECTIONS.teachers, SECTIONS.students,
-    SECTIONS.subjects, SECTIONS.holidays, SECTIONS.messages,
-    SECTIONS.reports, SECTIONS.reportcards,
+    SECTIONS.schools,
+    SECTIONS.credits,
+    SECTIONS.analytics,
+    SECTIONS.logs,
   ],
   schooladmin: [
     SECTIONS.dashboard,
     SECTIONS.classes, SECTIONS.attendance, SECTIONS.teachers, SECTIONS.students,
     SECTIONS.subjects, SECTIONS.holidays, SECTIONS.messages,
     SECTIONS.reports, SECTIONS.reportcards,
+    SECTIONS.billing, SECTIONS.logs,
   ],
   teacher: [
     SECTIONS.dashboard,
     SECTIONS.markattendance, SECTIONS.myclass, SECTIONS.reportcards,
+    SECTIONS.logs,
   ],
 }
 

@@ -12,9 +12,13 @@ const classes = computed(() => sid.value ? db.classesForSchool(sid.value) : [])
 
 const showAdd = ref(false)
 const showRename = ref(false)
+const showPromote = ref(false)
+const showStudents = ref(false)
 const renaming = ref<Class | null>(null)
+const viewing = ref<Class | null>(null)
 
 const openRename = (c: Class) => { renaming.value = c; showRename.value = true }
+const openStudents = (c: Class) => { viewing.value = c; showStudents.value = true }
 
 const remove = (id: string) => {
   const c = db.classes.find((x) => x.id === id)
@@ -47,7 +51,10 @@ const remove = (id: string) => {
         <h2 class="st-h2 m-0">Classes</h2>
         <p class="text-muted text-sm m-0 mt-1">Sections / grades for this school. Students and teachers attach to classes.</p>
       </div>
-      <Button label="Add Class" icon="pi pi-plus" :disabled="!sid" @click="showAdd = true" />
+      <div class="flex items-center gap-2">
+        <Button label="Promote students" icon="pi pi-arrow-up" severity="secondary" outlined :disabled="!sid || classes.length < 2" @click="showPromote = true" />
+        <Button label="Add Class" icon="pi pi-plus" :disabled="!sid" @click="showAdd = true" />
+      </div>
     </div>
 
     <EmptyState
@@ -66,9 +73,11 @@ const remove = (id: string) => {
       action-icon="pi pi-plus"
       @action="showAdd = true"
     />
-    <ClassTable v-else :classes="classes" @remove="remove" @rename="openRename" />
+    <ClassTable v-else :classes="classes" @remove="remove" @rename="openRename" @view="openStudents" />
 
     <ClassAddDialog v-model:visible="showAdd" :school-id="sid" />
     <ClassRenameDialog v-model:visible="showRename" :cls="renaming" />
+    <ClassStudentsDialog v-model:visible="showStudents" :cls="viewing" />
+    <ClassPromoteDialog v-model:visible="showPromote" />
   </div>
 </template>

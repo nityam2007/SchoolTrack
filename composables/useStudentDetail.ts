@@ -1,6 +1,8 @@
 export const useStudentDetail = () => {
   const route = useRoute()
   const db = useDbStore()
+  // The exam-history view reads marks, which are lazy-loaded.
+  onMounted(() => db.ensureMarks())
   const id = computed(() => route.params.id as string)
   const student = computed(() => db.students.find((s) => s.id === id.value) ?? null)
   const cls = computed(() => student.value ? db.classMap.get(student.value.class_id) ?? null : null)

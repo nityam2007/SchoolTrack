@@ -21,5 +21,6 @@ const { school, classes, teachers, students, messages, attendance, presentRate, 
       />
       <SchoolQuickLinks />
     </div>
+    <SchoolCreditHistory :school="school" />
   </div>
 </template>
