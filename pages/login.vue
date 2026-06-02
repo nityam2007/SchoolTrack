@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Role } from '~/types/database'
 import { ROLE_META, toInitials } from '~/composables/useUserDisplay'
+import { avatarGradient } from '~/composables/useAvatar'
 
 definePageMeta({ layout: 'auth' })
 
@@ -27,75 +28,58 @@ const grouped = computed(() =>
     .filter((g) => g.items.length),
 )
 
-const fill = (a: DemoAcct) => {
-  email.value = a.email
-  password.value = a.password
-  auth.error = ''
-}
-
+const fill = (a: DemoAcct) => { email.value = a.email; password.value = a.password; auth.error = '' }
 const submit = async () => {
   const ok = await auth.login(email.value.trim(), password.value)
   if (ok) navigateTo('/dashboard')
 }
+
+const FEATURES = [
+  { icon: 'pi pi-camera',     label: 'Photo-proof attendance' },
+  { icon: 'pi pi-comment',    label: 'WhatsApp parent alerts' },
+  { icon: 'pi pi-file',       label: 'Printable report cards' },
+]
 </script>
 
 <template>
-  <div class="grid lg:grid-cols-[1.1fr_1fr] min-h-screen w-full">
-    <!-- Brand panel (hidden on mobile). All decoration is pointer-events:none so it can never block the form. -->
-    <section class="hidden lg:flex relative overflow-hidden flex-col justify-between p-12 bg-gradient-to-br from-[#0d1530] via-[#0a1024] to-[#0a0e1a]">
-      <div
-        class="absolute -top-32 -left-24 w-[480px] h-[480px] rounded-full blur-3xl opacity-30 pointer-events-none"
-        style="background: radial-gradient(closest-side, #3B82F6, transparent);"
-      />
-      <div
-        class="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-25 pointer-events-none"
-        style="background: radial-gradient(closest-side, #8B5CF6, transparent);"
-      />
+  <div class="grid lg:grid-cols-[1.05fr_1fr] min-h-screen w-full">
+    <!-- Brand panel (light) -->
+    <section class="hidden lg:flex relative overflow-hidden flex-col justify-between p-12 bg-gradient-to-br from-[#eef3fe] via-[#e8eefb] to-[#e3ecff]">
+      <div class="absolute -top-32 -left-24 w-[460px] h-[460px] rounded-full blur-3xl opacity-50 pointer-events-none" style="background: radial-gradient(closest-side, rgba(18,109,251,0.28), transparent);" />
+      <div class="absolute -bottom-24 -right-24 w-[420px] h-[420px] rounded-full blur-3xl opacity-40 pointer-events-none" style="background: radial-gradient(closest-side, rgba(0,153,255,0.22), transparent);" />
 
-      <div class="relative z-10 flex items-center gap-3">
-        <div class="w-11 h-11 bg-accent rounded-xl flex items-center justify-center shadow-glow">
-          <i class="pi pi-building text-white text-xl" />
+      <div class="relative z-10 flex items-center gap-2.5">
+        <div class="w-11 h-11 bg-accent rounded-2xl flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(18,109,251,0.6)]">
+          <i class="pi pi-bookmark-fill text-white text-lg" />
         </div>
-        <span class="text-2xl font-extrabold font-display tracking-tight">SchoolTrack</span>
+        <span class="text-2xl font-bold font-display tracking-tight text-ink">SchoolTrack</span>
       </div>
 
       <div class="relative z-10 max-w-lg">
-        <h1 class="text-5xl font-extrabold font-display tracking-tight leading-[1.05] mb-6">
-          Attendance &
-          <span class="text-accent">report cards</span>,
-          reimagined.
+        <h1 class="text-[44px] font-bold font-display tracking-tight leading-[1.05] mb-5 text-ink">
+          Attendance &amp; <span class="text-accent">report cards</span>, reimagined.
         </h1>
         <p class="text-light text-lg leading-relaxed">
-          One platform for super admins, principals, and teachers — with photo-proof attendance,
+          One platform for super admins, principals, and teachers — photo-proof attendance,
           WhatsApp parent alerts, and CBSE-style report cards.
         </p>
         <div class="mt-10 grid grid-cols-3 gap-3">
-          <div v-for="f in [
-            { icon: 'pi pi-check-square', label: 'Photo-proof attendance' },
-            { icon: 'pi pi-comments',     label: 'WhatsApp alerts' },
-            { icon: 'pi pi-file',         label: 'Printable report cards' },
-          ]" :key="f.label"
-            class="rounded-card border border-line bg-card/60 backdrop-blur p-4 flex flex-col gap-2">
-            <i :class="f.icon" class="text-accent text-base" />
-            <span class="text-sm font-semibold leading-tight">{{ f.label }}</span>
+          <div v-for="f in FEATURES" :key="f.label" class="rounded-card border border-line bg-white/70 backdrop-blur p-4 flex flex-col gap-2 shadow-card">
+            <div class="w-9 h-9 rounded-ctl bg-accentSoft flex items-center justify-center"><i :class="f.icon" class="text-accent text-base" /></div>
+            <span class="text-sm font-semibold leading-tight text-ink">{{ f.label }}</span>
           </div>
         </div>
       </div>
 
-      <div class="relative z-10 text-muted text-xs">
-        © 2026 SchoolTrack — Multi-tenant school SaaS
-      </div>
+      <div class="relative z-10 text-muted text-xs">© 2026 SchoolTrack — Multi-tenant school SaaS</div>
     </section>
 
     <!-- Login form -->
-    <section class="flex items-center justify-center p-6 sm:p-12">
+    <section class="flex items-center justify-center p-6 sm:p-12 bg-card">
       <div class="w-full max-w-md animate-rise">
-        <!-- Brand mark for mobile (hidden on lg) -->
         <div class="lg:hidden flex items-center gap-2.5 mb-8 justify-center">
-          <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
-            <i class="pi pi-building text-white text-lg" />
-          </div>
-          <span class="text-xl font-extrabold font-display tracking-tight">SchoolTrack</span>
+          <div class="w-10 h-10 bg-accent rounded-2xl flex items-center justify-center"><i class="pi pi-bookmark-fill text-white text-lg" /></div>
+          <span class="text-xl font-bold font-display tracking-tight text-ink">SchoolTrack</span>
         </div>
 
         <h2 class="st-h1 mb-1">Welcome back</h2>
@@ -111,35 +95,15 @@ const submit = async () => {
           </div>
           <div>
             <label class="st-label block mb-1.5">Password</label>
-            <Password
-              v-model="password"
-              placeholder="••••••••"
-              :feedback="false"
-              toggle-mask
-              input-class="w-full"
-              class="w-full"
-              autocomplete="current-password"
-              @keydown.enter="submit"
-            />
+            <Password v-model="password" placeholder="••••••••" :feedback="false" toggle-mask input-class="w-full" class="w-full" autocomplete="current-password" @keydown.enter="submit" />
           </div>
 
-          <Message v-if="auth.error" severity="error" :closable="false" class="!my-1">
-            {{ auth.error }}
-          </Message>
+          <Message v-if="auth.error" severity="error" :closable="false" class="!my-1">{{ auth.error }}</Message>
 
-          <Button
-            type="submit"
-            label="Sign In"
-            icon="pi pi-arrow-right"
-            icon-pos="right"
-            class="w-full !py-2.5"
-            :loading="auth.loading"
-          />
+          <Button type="submit" label="Sign In" icon="pi pi-arrow-right" icon-pos="right" class="w-full !py-2.5" :loading="auth.loading" />
         </form>
 
-        <Divider align="center" class="!my-6">
-          <span class="text-muted text-[11px] uppercase tracking-wider">or try a demo</span>
-        </Divider>
+        <Divider align="center" class="!my-6"><span class="text-muted text-[11px] uppercase tracking-wider">or try a demo</span></Divider>
 
         <div class="space-y-3">
           <div v-for="g in grouped" :key="g.role">
@@ -152,10 +116,7 @@ const submit = async () => {
                 class="group bg-surface hover:bg-surface2 border border-line hover:border-accent/40 rounded-ctl px-3 py-2.5 text-left transition-all flex items-center gap-3"
                 @click="fill(a)"
               >
-                <div
-                  class="w-8 h-8 rounded-ctl ring-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-wider shrink-0"
-                  :class="ROLE_META[a.role].tone"
-                >
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br flex items-center justify-center text-[10px] font-bold text-white shrink-0" :class="avatarGradient(a.label)">
                   {{ toInitials(a.label) }}
                 </div>
                 <div class="min-w-0 flex-1">
