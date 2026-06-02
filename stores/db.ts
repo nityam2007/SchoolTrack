@@ -235,6 +235,13 @@ export const useDbStore = defineStore('db', {
       const i = this.schools.findIndex((s) => s.id === id)
       if (i >= 0) this.schools[i] = { ...this.schools[i], ...patch }
     },
+    /** Patch a school's logo in local state (the DB write goes through the
+     *  /api/school-logo server route, which works for principals too). */
+    setSchoolLogoLocal(id: string, logo_url: string) {
+      const i = this.schools.findIndex((s) => s.id === id)
+      if (i >= 0) this.schools[i] = { ...this.schools[i], logo_url }
+    },
+
     async topUpCredits(school_id: string, amount: number, note = '') {
       const s = this.schools.find((x) => x.id === school_id)
       if (!s || amount <= 0) return

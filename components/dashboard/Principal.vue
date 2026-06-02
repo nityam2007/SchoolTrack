@@ -59,6 +59,16 @@ const trend = computed(() => {
       />
     </div>
 
+    <div class="st-card">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <p class="st-h3 m-0">School branding</p>
+          <p class="text-muted text-sm m-0 mt-0.5">Your logo appears in the sidebar and on report cards.</p>
+        </div>
+        <SchoolLogoUpload :school-id="stats.school.id" :size="56" />
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div class="st-card lg:col-span-2 relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent pointer-events-none" />
