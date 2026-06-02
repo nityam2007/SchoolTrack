@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import type {
-  Attendance, AuditLog, Class, CreditRequest, CreditTxn, Exam, Holiday, Marks, Message,
-  School, StaffMessage, Student, Subject, Teacher,
+  Attendance, AttendancePhoto, AuditLog, Class, CreditRequest, CreditTxn, Exam, Holiday, Marks,
+  Message, School, StaffMessage, Student, Subject, Teacher,
 } from '~/types/database'
 
 interface DbState {
@@ -19,6 +19,7 @@ interface DbState {
   creditRequests: CreditRequest[]
   staffMessages: StaffMessage[]
   auditLogs: AuditLog[]        // loaded on demand for the Logs page
+  attendancePhotos: AttendancePhoto[]
   loaded: boolean          // phase-1 (core) tables ready — UI can paint
   loading: boolean
   activityLoaded: boolean  // phase-2 (attendance, messages) ready
@@ -35,7 +36,7 @@ const blankState = (): DbState => ({
   schools: [], classes: [], teachers: [], students: [],
   attendance: [], holidays: [], messages: [],
   subjects: [], exams: [], marks: [], creditTxns: [],
-  creditRequests: [], staffMessages: [], auditLogs: [],
+  creditRequests: [], staffMessages: [], auditLogs: [], attendancePhotos: [],
   loaded: false, loading: false,
   activityLoaded: false, activityLoading: false,
   marksLoaded: false, marksLoading: false,
@@ -335,6 +336,27 @@ export const useDbStore = defineStore('db', {
       const { data, error } = await supabase
         .from('audit_logs').select('*').order('created_at', { ascending: false }).limit(limit)
       this.auditLogs = error ? [] : ((data ?? []) as AuditLog[])
+    },
+
+    // ── Attendance classroom photos (private bucket) ────────────────────────
+    async addAttendancePhoto(row: Omit<AttendancePhoto, 'id' | 'created_at'>) {
+      const supabase = useSb()
+      const { data, error } = await supabase
+        .from('attendance_photos').upsert({ ...row }, { onConflict: 'class_id,date' }).select()
+      if (error) return // table may not be migrated yet — non-fatal
+      const r = data?.[0] as AttendancePhoto | undefined
+      if (r) {
+        const i = this.attendancePhotos.findIndex((p) => p.class_id === r.class_id && p.date === r.date)
+        if (i >= 0) this.attendancePhotos[i] = r
+        else this.attendancePhotos.unshift(r)
+      }
+    },
+    async loadAttendancePhotos(school_id: string) {
+      const supabase = useSb()
+      const { data, error } = await supabase
+        .from('attendance_photos').select('*').eq('school_id', school_id)
+        .order('date', { ascending: false }).limit(200)
+      this.attendancePhotos = error ? [] : ((data ?? []) as AttendancePhoto[])
     },
 
     // ── Student promotion (class upgrade, keeps old class as history) ───────

@@ -27,7 +27,12 @@ watchEffect(() => {
 })
 
 const photoTaken = ref(false)
+const capturedBlob = ref<Blob | null>(null)
 const submitting = ref(false)
+const { log } = useAudit()
+
+const onCaptured = (blob: Blob) => { capturedBlob.value = blob; photoTaken.value = true }
+const onCleared = () => { capturedBlob.value = null; photoTaken.value = false }
 
 const setAll = (status: AttendanceStatus) => {
   for (const s of roster.value) states.value[s.id] = status
@@ -38,25 +43,33 @@ const toggle = (id: string) => {
 }
 
 const submit = async () => {
-  if (!photoTaken.value) {
-    toast.add({ severity: 'warn', summary: 'Classroom photo required', life: 3000 })
+  if (!photoTaken.value || !capturedBlob.value) {
+    toast.add({ severity: 'warn', summary: 'Classroom photo required', detail: 'Open the camera and capture a photo.', life: 3000 })
     return
   }
   if (!auth.user?.classId || !auth.schoolId) return
-  const records: Attendance[] = roster.value.map((s) => ({
-    id: makeId('A', s.id),
-    school_id: auth.schoolId!,
-    class_id: auth.user!.classId!,
-    student_id: s.id,
-    date: today,
-    status: states.value[s.id] ?? 'present',
-    teacher_id: auth.user!.teacherId ?? null,
-    photo: true,
-    timestamp: new Date().toISOString(),
-  }))
+  const sid = auth.schoolId, cid = auth.user.classId
   submitting.value = true
   try {
+    // Upload the classroom proof to the private bucket (best-effort: if the
+    // bucket isn't migrated yet, attendance still saves).
+    try {
+      const supabase = useSb()
+      const path = `${sid}/${cid}/${today}.jpg`
+      const { error: upErr } = await supabase.storage
+        .from('attendance-photos').upload(path, capturedBlob.value, { upsert: true, contentType: 'image/jpeg' })
+      if (!upErr) {
+        await db.addAttendancePhoto({ school_id: sid, class_id: cid, date: today, path, teacher_id: auth.user.teacherId ?? null })
+      }
+    } catch { /* photo storage not provisioned — proceed */ }
+
+    const records: Attendance[] = roster.value.map((s) => ({
+      id: makeId('A', s.id), school_id: sid, class_id: cid, student_id: s.id,
+      date: today, status: states.value[s.id] ?? 'present',
+      teacher_id: auth.user!.teacherId ?? null, photo: true, timestamp: new Date().toISOString(),
+    }))
     await db.upsertAttendanceBatch(records)
+    await log('create', { entity: 'attendance', schoolId: sid, detail: { class_id: cid, date: today, count: records.length } })
     toastOk(toast, 'Attendance saved')
     navigateTo('/dashboard')
   } catch (e) {
@@ -90,17 +103,12 @@ const submit = async () => {
         <Button label="All Absent" icon="pi pi-times" severity="danger" outlined @click="setAll('absent')" />
       </div>
 
-      <div class="st-card flex items-center justify-between flex-wrap gap-3">
-        <div>
+      <div class="st-card">
+        <div class="mb-3">
           <p class="font-bold m-0">Classroom Photo</p>
-          <p class="text-muted text-xs m-0 mt-1">Required proof. In a real device this triggers the live camera.</p>
+          <p class="text-muted text-xs m-0 mt-1">Live camera proof — required before submitting. Visible to your principal.</p>
         </div>
-        <Button
-          :label="photoTaken ? 'Photo Captured ✓' : 'Take Photo'"
-          :icon="photoTaken ? 'pi pi-refresh' : 'pi pi-camera'"
-          :severity="photoTaken ? 'secondary' : 'primary'"
-          @click="photoTaken = true"
-        />
+        <CameraCapture @captured="onCaptured" @cleared="onCleared" />
       </div>
 
       <div class="st-card flex flex-col gap-2">

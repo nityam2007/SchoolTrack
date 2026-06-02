@@ -166,6 +166,16 @@ export interface Marks {
   updated_at?: string
 }
 
+export interface AttendancePhoto {
+  id: string
+  school_id: string
+  class_id: string
+  date: string
+  path: string          // object path inside the private attendance-photos bucket
+  teacher_id: string | null
+  created_at: string
+}
+
 export interface Profile {
   id: string
   email: string

@@ -1,8 +1,13 @@
 <script setup lang="ts">
 const auth = useAuthStore()
+const db = useDbStore()
 const { items } = useNav()
 const { initials, roleMeta } = useUserDisplay()
 const route = useRoute()
+
+// In a school context (principal/teacher, or a superadmin impersonating one),
+// brand the sidebar with that school's logo + name instead of the app mark.
+const schoolBrand = computed(() => (auth.role !== 'superadmin' ? db.activeSchool : null))
 
 const isActive = (to: string) =>
   to === '/dashboard' ? route.path === '/dashboard' : route.path.startsWith(to)
@@ -17,10 +22,20 @@ const onLogout = async () => {
   <aside class="w-[244px] shrink-0 bg-surface border-r border-line flex flex-col px-4 py-5 gap-1">
     <!-- Brand -->
     <NuxtLink to="/dashboard" class="flex items-center gap-2.5 mb-5 px-1">
-      <div class="w-9 h-9 bg-accent rounded-xl flex items-center justify-center shadow-[0_4px_12px_-2px_rgba(18,109,251,0.5)]">
-        <i class="pi pi-bookmark-fill text-white text-sm" />
+      <div
+        class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
+        :class="schoolBrand ? 'border border-line bg-surface2' : 'bg-accent shadow-[0_4px_12px_-2px_rgba(18,109,251,0.5)]'"
+      >
+        <img v-if="schoolBrand?.logo_url" :src="schoolBrand.logo_url" :alt="`${schoolBrand.name} logo`" class="w-full h-full object-cover">
+        <i v-else-if="schoolBrand" class="pi pi-building text-accent text-sm" />
+        <i v-else class="pi pi-bookmark-fill text-white text-sm" />
       </div>
-      <span class="font-bold font-display text-[18px] tracking-tight text-ink">SchoolTrack</span>
+      <div class="min-w-0">
+        <span class="block font-bold font-display text-[16px] leading-tight tracking-tight text-ink truncate">
+          {{ schoolBrand?.name ?? 'SchoolTrack' }}
+        </span>
+        <span v-if="schoolBrand?.city" class="block text-[10px] text-muted leading-tight truncate">{{ schoolBrand.city }}</span>
+      </div>
     </NuxtLink>
 
     <!-- Search -->

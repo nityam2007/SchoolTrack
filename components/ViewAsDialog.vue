@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Role } from '~/types/database'
+import { avatarGradient, initialsOf } from '~/composables/useAvatar'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ 'update:visible': [v: boolean] }>()
@@ -65,6 +66,8 @@ const ROLE_OPTIONS: Array<{ label: string; value: Role | 'all' }> = [
 
 const schoolName = (id: string | null) =>
   id ? db.schools.find((s) => s.id === id)?.name ?? id : '—'
+const schoolLogo = (id: string | null) =>
+  (id ? db.schools.find((s) => s.id === id)?.logo_url : null) ?? null
 
 const impersonate = async (u: UserRow) => {
   if (submitting.value) return
@@ -128,8 +131,15 @@ const impersonate = async (u: UserRow) => {
         <DataTable :value="filtered" responsive-layout="scroll" striped-rows paginator :rows="8">
           <Column header="Name">
             <template #body="{ data }">
-              <p class="font-semibold m-0">{{ data.full_name || '(no name)' }}</p>
-              <p class="text-muted text-xs m-0 font-mono">{{ data.email }}</p>
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-[11px] font-semibold shrink-0" :class="avatarGradient(data.full_name || data.email)">
+                  {{ initialsOf(data.full_name || data.email) }}
+                </div>
+                <div class="min-w-0">
+                  <p class="font-semibold m-0 truncate">{{ data.full_name || '(no name)' }}</p>
+                  <p class="text-muted text-xs m-0 font-mono truncate">{{ data.email }}</p>
+                </div>
+              </div>
             </template>
           </Column>
           <Column header="Role">
@@ -140,7 +150,13 @@ const impersonate = async (u: UserRow) => {
           </Column>
           <Column header="School">
             <template #body="{ data }">
-              <span class="text-xs">{{ schoolName(data.school_id) }}</span>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md border border-line bg-surface2 overflow-hidden flex items-center justify-center shrink-0">
+                  <img v-if="schoolLogo(data.school_id)" :src="schoolLogo(data.school_id)!" alt="" class="w-full h-full object-cover">
+                  <i v-else class="pi pi-building text-muted text-[10px]" />
+                </div>
+                <span class="text-xs truncate">{{ schoolName(data.school_id) }}</span>
+              </div>
             </template>
           </Column>
           <Column header="" :style="{ width: '140px' }">

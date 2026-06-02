@@ -86,4 +86,18 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'vercel',
   },
+
+  // Security headers + long-cache for immutable build assets. Camera is allowed
+  // on same-origin (the teacher attendance capture needs getUserMedia).
+  routeRules: {
+    '/**': {
+      headers: {
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'camera=(self), microphone=(), geolocation=()',
+      },
+    },
+    '/_nuxt/**': { headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } },
+  },
 })

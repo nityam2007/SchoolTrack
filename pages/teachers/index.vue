@@ -13,13 +13,21 @@ const form = reactive<Partial<Teacher>>({ name: '', email: '', class_id: null, p
 const teachers = computed(() => (db.activeSchoolId ? db.teachersForSchool(db.activeSchoolId) : []))
 const classes = computed(() => (db.activeSchoolId ? db.classesForSchool(db.activeSchoolId) : []))
 
+const q = ref('')
 const enriched = computed(() => {
   const cm = db.classMap
-  return teachers.value.map((t) => ({
-    ...t,
-    class_name: t.class_id ? cm.get(t.class_id)?.name ?? 'Unassigned' : 'Unassigned',
-  }))
+  const t = q.value.trim().toLowerCase()
+  return teachers.value
+    .map((tt) => ({ ...tt, class_name: tt.class_id ? cm.get(tt.class_id)?.name ?? 'Unassigned' : 'Unassigned' }))
+    .filter((tt) => !t || `${tt.name} ${tt.email} ${tt.phone} ${tt.class_name}`.toLowerCase().includes(t))
 })
+const exportCsv = () => {
+  downloadFile(
+    toCsv(enriched.value.map((t) => ({ name: t.name, email: t.email, phone: t.phone, class: t.class_name })),
+      ['name', 'email', 'phone', 'class']),
+    'teachers.csv',
+  )
+}
 
 const submit = async () => {
   if (!db.activeSchoolId || !form.name || !form.email) {
@@ -48,9 +56,19 @@ const open = (t: Teacher) => router.push(`/teachers/${t.id}`)
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex items-center justify-between">
-      <h2 class="st-h2 m-0">Teachers</h2>
-      <Button label="Add Teacher" icon="pi pi-plus" @click="showAdd = true" />
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <div>
+        <h2 class="st-h2 m-0">Teachers</h2>
+        <p class="text-muted text-sm mt-1">{{ teachers.length }} teacher(s)</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="relative">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-muted text-sm" />
+          <input v-model="q" type="text" placeholder="Search teachers…" class="h-10 w-52 pl-10 pr-3 rounded-ctl bg-surface border border-line text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accentSoft transition">
+        </span>
+        <Button label="Export" icon="pi pi-download" severity="secondary" outlined @click="exportCsv" />
+        <Button label="Add Teacher" icon="pi pi-plus" @click="showAdd = true" />
+      </div>
     </div>
     <TableSkeleton v-if="db.loading && !db.loaded" :rows="4" :cols="4" />
     <EmptyState

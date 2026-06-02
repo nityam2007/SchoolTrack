@@ -94,6 +94,13 @@ alter table public.messages add column if not exists body           text not nul
 alter table public.messages add column if not exists attachment_url text;
 alter table public.messages add column if not exists recipient_type text not null default 'student';
 
+-- Teachers may send messages within their own school (UI scopes to their class;
+-- the messages table has no class_id, so RLS scopes to the school).
+drop policy if exists "messages_teacher_write" on public.messages;
+create policy "messages_teacher_write" on public.messages
+  for insert to authenticated
+  with check (school_id = (select public.current_school_id()) and (select public.current_role()) = 'teacher');
+
 -- ─── Student promotion: remember the previous class ──────────────────────────
 alter table public.students add column if not exists previous_class_id text references public.classes(id) on delete set null;
 

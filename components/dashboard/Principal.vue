@@ -21,6 +21,21 @@ const stats = computed(() => {
     rate: total ? Math.round((present / total) * 100) : 0,
   }
 })
+
+// Daily attendance-rate trend for the last ~14 marked days.
+const trend = computed(() => {
+  const sid = auth.schoolId
+  if (!sid) return []
+  const byDate = new Map<string, { p: number; t: number }>()
+  for (const a of db.attendance) {
+    if (a.school_id !== sid) continue
+    const e = byDate.get(a.date) ?? { p: 0, t: 0 }
+    e.t++; if (a.status === 'present') e.p++
+    byDate.set(a.date, e)
+  }
+  return [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-14)
+    .map(([d, v]) => ({ label: d.slice(5), value: v.t ? Math.round((v.p / v.t) * 100) : 0 }))
+})
 </script>
 
 <template>
@@ -104,6 +119,11 @@ const stats = computed(() => {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="st-card">
+        <p class="st-h3 mb-2">Attendance trend</p>
+        <ChartLine v-if="trend.length" :points="trend" unit="%" :height="200" />
+        <p v-else class="text-muted text-sm py-10 text-center">No attendance recorded yet.</p>
+      </div>
       <DashboardUpcomingHolidays />
     </div>
   </div>

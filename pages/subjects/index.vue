@@ -6,7 +6,12 @@ const toast = useToast()
 const confirm = useConfirm()
 
 const sid = computed(() => db.activeSchoolId)
-const subjects = computed(() => sid.value ? db.subjectsForSchool(sid.value) : [])
+const q = ref('')
+const subjects = computed(() => {
+  const all = sid.value ? db.subjectsForSchool(sid.value) : []
+  const t = q.value.trim().toLowerCase()
+  return t ? all.filter((s) => s.name.toLowerCase().includes(t)) : all
+})
 
 const showAdd = ref(false)
 
@@ -40,7 +45,13 @@ const remove = (id: string) => {
           Manage the subjects used for exam marks and report cards.
         </p>
       </div>
-      <Button label="Add Subject" icon="pi pi-plus" :disabled="!sid" @click="showAdd = true" />
+      <div class="flex items-center gap-2">
+        <span v-if="sid" class="relative">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-muted text-sm" />
+          <input v-model="q" type="text" placeholder="Search subjects…" class="h-10 w-48 pl-10 pr-3 rounded-ctl bg-surface border border-line text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accentSoft transition">
+        </span>
+        <Button label="Add Subject" icon="pi pi-plus" :disabled="!sid" @click="showAdd = true" />
+      </div>
     </div>
 
     <EmptyState
