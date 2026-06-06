@@ -89,11 +89,14 @@ const setRange = (n: number) => { from.value = daysAgo(n); to.value = today }
         <h2 class="st-h2 m-0">Analytics</h2>
         <p class="text-muted text-sm mt-1">Attendance &amp; performance across the platform</p>
       </div>
-      <Button label="Export" icon="pi pi-download" severity="secondary" outlined @click="exportCsv" />
+      <div class="flex items-center gap-2 print:hidden">
+        <Button label="Export" icon="pi pi-download" severity="secondary" outlined @click="exportCsv" />
+        <Button label="Print / PDF" icon="pi pi-print" severity="secondary" outlined @click="printPage" />
+      </div>
     </div>
 
     <!-- Filters -->
-    <div class="st-card !p-4 flex flex-wrap items-end gap-3">
+    <div class="st-card !p-4 flex flex-wrap items-end gap-3 print:hidden">
       <div class="flex flex-col gap-1">
         <label class="st-label">School</label>
         <select v-model="school" class="h-10 px-3 rounded-ctl bg-surface border border-line text-sm text-ink outline-none focus:border-accent min-w-[180px]">

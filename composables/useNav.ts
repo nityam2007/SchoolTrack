@@ -25,6 +25,7 @@ const SECTIONS = {
   myclass:       { key: 'myclass',       label: 'My Class',        icon: 'pi pi-list',         to: '/my-class' },
   billing:       { key: 'billing',       label: 'Billing',         icon: 'pi pi-wallet',       to: '/billing' },
   logs:          { key: 'logs',          label: 'Activity Logs',   icon: 'pi pi-history',      to: '/logs' },
+  settings:      { key: 'settings',      label: 'Settings',        icon: 'pi pi-cog',          to: '/settings' },
 } as const
 
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
@@ -37,18 +38,19 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     SECTIONS.credits,
     SECTIONS.analytics,
     SECTIONS.logs,
+    SECTIONS.settings,
   ],
   schooladmin: [
     SECTIONS.dashboard,
     SECTIONS.classes, SECTIONS.attendance, SECTIONS.teachers, SECTIONS.students,
     SECTIONS.subjects, SECTIONS.holidays, SECTIONS.messages,
     SECTIONS.reports, SECTIONS.reportcards,
-    SECTIONS.billing, SECTIONS.logs,
+    SECTIONS.billing, SECTIONS.logs, SECTIONS.settings,
   ],
   teacher: [
     SECTIONS.dashboard,
     SECTIONS.markattendance, SECTIONS.myclass, SECTIONS.reportcards,
-    SECTIONS.logs,
+    SECTIONS.logs, SECTIONS.settings,
   ],
 }
 

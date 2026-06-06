@@ -4,6 +4,10 @@ import { ROLE_META, toInitials } from '~/composables/useUserDisplay'
 import { avatarGradient } from '~/composables/useAvatar'
 
 definePageMeta({ layout: 'auth' })
+useSeoMeta({
+  title: 'Sign in',
+  description: 'Sign in to SkoolTrack — attendance, report cards, and parent messaging for K-12 schools.',
+})
 
 const auth = useAuthStore()
 
@@ -52,7 +56,7 @@ const FEATURES = [
         <div class="w-11 h-11 bg-accent rounded-2xl flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(18,109,251,0.6)]">
           <i class="pi pi-bookmark-fill text-white text-lg" />
         </div>
-        <span class="text-2xl font-bold font-display tracking-tight text-ink">SchoolTrack</span>
+        <span class="text-2xl font-bold font-display tracking-tight text-ink">SkoolTrack</span>
       </div>
 
       <div class="relative z-10 max-w-lg">
@@ -71,7 +75,7 @@ const FEATURES = [
         </div>
       </div>
 
-      <div class="relative z-10 text-muted text-xs">© 2026 SchoolTrack — Multi-tenant school SaaS</div>
+      <div class="relative z-10 text-muted text-xs">© 2026 SkoolTrack — Multi-tenant school SaaS</div>
     </section>
 
     <!-- Login form -->
@@ -79,7 +83,7 @@ const FEATURES = [
       <div class="w-full max-w-md animate-rise">
         <div class="lg:hidden flex items-center gap-2.5 mb-8 justify-center">
           <div class="w-10 h-10 bg-accent rounded-2xl flex items-center justify-center"><i class="pi pi-bookmark-fill text-white text-lg" /></div>
-          <span class="text-xl font-bold font-display tracking-tight text-ink">SchoolTrack</span>
+          <span class="text-xl font-bold font-display tracking-tight text-ink">SkoolTrack</span>
         </div>
 
         <h2 class="st-h1 mb-1">Welcome back</h2>

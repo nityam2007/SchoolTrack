@@ -8,7 +8,7 @@ const userMenu = ref()
 const showViewAs = ref(false)
 const userMenuItems = computed(() => {
   const items: Array<Record<string, unknown>> = [
-    { label: 'Account settings', icon: 'pi pi-user', disabled: true },
+    { label: 'Account settings', icon: 'pi pi-cog', command: () => navigateTo('/settings') },
     { label: 'Reload data', icon: 'pi pi-refresh', command: () => db.reload() },
   ]
   // Superadmins (real, not currently impersonating) can start impersonation.
@@ -50,10 +50,11 @@ const PAGE_TITLES: Record<string, string> = {
   'report-cards': 'Report Cards',
   billing: 'Billing',
   logs: 'Activity Logs',
+  settings: 'Settings',
 }
 const pageTitle = computed(() => {
   const seg = route.path.split('/').filter(Boolean)[0] ?? 'dashboard'
-  return PAGE_TITLES[seg] ?? 'SchoolTrack'
+  return PAGE_TITLES[seg] ?? 'SkoolTrack'
 })
 
 const creditsTone = computed(() => {

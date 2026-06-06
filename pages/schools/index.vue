@@ -51,6 +51,15 @@ const open = (s: School) => router.push(`/schools/${s.id}`)
 const editing = ref<School | null>(null)
 const showEdit = ref(false)
 const edit = (s: School) => { editing.value = s; showEdit.value = true }
+
+const exportCsv = () => {
+  downloadFile(
+    toCsv(filtered.value.map((s) => ({
+      id: s.id, name: s.name, city: s.city, credits: s.credits, active: s.active ? 'yes' : 'no',
+    })), ['id', 'name', 'city', 'credits', 'active']),
+    'schools.csv',
+  )
+}
 </script>
 
 <template>
@@ -60,7 +69,7 @@ const edit = (s: School) => { editing.value = s; showEdit.value = true }
         <h2 class="st-h2 m-0">Schools</h2>
         <p class="text-muted text-sm mt-1">{{ db.schools.length }} school(s) on the platform</p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 print:hidden">
         <span class="relative">
           <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-muted text-sm" />
           <input
@@ -70,6 +79,8 @@ const edit = (s: School) => { editing.value = s; showEdit.value = true }
             class="h-10 w-56 pl-10 pr-3 rounded-ctl bg-surface border border-line text-sm text-ink placeholder:text-muted outline-none focus:border-accent focus:ring-2 focus:ring-accentSoft transition"
           >
         </span>
+        <Button label="Export" icon="pi pi-download" severity="secondary" outlined @click="exportCsv" />
+        <Button label="Print / PDF" icon="pi pi-print" severity="secondary" outlined @click="printPage" />
         <Button label="Add School" icon="pi pi-plus" @click="showAdd = true" />
       </div>
     </div>

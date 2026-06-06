@@ -1,0 +1,30 @@
+# SkoolTrack
+
+> Multi-tenant K-12 school SaaS for attendance, report cards, credits/billing, and parent messaging. https://skooltrack.in
+
+SkoolTrack is a role-based web application with three roles: super admin (platform), principal (school admin), and teacher. Authentication is email + password (Supabase). After signing in at /login you are routed to /dashboard; the sidebar navigation adapts to your role. All data is row-level-security scoped by school and role.
+
+## Key routes
+- /login — sign in (email + password). Demo accounts are listed on this screen.
+- /dashboard — role-aware overview
+- /schools — (super admin) manage schools, logos, status, credits
+- /credits — (super admin) credit management + approve principal requests
+- /analytics — (super admin) attendance & performance analytics with filters
+- /students — (principal) student roster, CSV import/export, detail pages
+- /teachers — (principal) teacher roster
+- /classes — (principal) classes, view students, student promotion
+- /subjects — (principal) subject catalog
+- /attendance — (principal) attendance records + classroom photo proof
+- /mark-attendance — (teacher) mark daily attendance with a live camera photo
+- /my-class — (teacher) class roster, student info, messaging
+- /report-cards — report cards with PDF download and template selection
+- /messages — parent WhatsApp alerts, custom messages, staff notices
+- /holidays — holiday calendar (pauses attendance, optional parent notify)
+- /billing — (principal) credit balance, history, request top-ups
+- /logs — activity / audit logs (who did what, when, IP)
+- /settings — account and workspace settings
+
+## Notes for automated agents
+- Navigate by following sidebar links; each list page has search and CSV export.
+- Report cards and most tables can be exported (CSV) or printed to PDF.
+- Writes are authorized server-side by Supabase RLS; unauthorized actions return 403.

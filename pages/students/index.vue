@@ -92,12 +92,13 @@ const exportCsv = () => {
   <div class="flex flex-col gap-6">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <h2 class="st-h2 m-0">Students</h2>
-      <div class="flex items-center gap-2 flex-wrap">
+      <div class="flex items-center gap-2 flex-wrap print:hidden">
         <IconField>
           <InputIcon class="pi pi-search" />
           <InputText v-model="search" placeholder="Search name or roll..." class="w-64" />
         </IconField>
         <Button label="Export" icon="pi pi-download" severity="secondary" outlined @click="exportCsv" />
+        <Button label="Print / PDF" icon="pi pi-print" severity="secondary" outlined @click="printPage" />
         <Button label="Import CSV" icon="pi pi-upload" severity="secondary" outlined @click="showImport = true" />
         <Button label="Add Student" icon="pi pi-plus" @click="showAdd = true" />
       </div>

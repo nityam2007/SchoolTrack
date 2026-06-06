@@ -91,11 +91,14 @@ const setRange = (n: number) => { from.value = daysAgo(n); to.value = today }
         <h2 class="st-h2 m-0">Reports &amp; Analytics</h2>
         <p class="text-muted text-sm mt-1">Attendance and performance reports with filters &amp; export.</p>
       </div>
-      <Button label="Export CSV" icon="pi pi-download" severity="secondary" outlined @click="exportCsv" />
+      <div class="flex items-center gap-2 print:hidden">
+        <Button label="Export CSV" icon="pi pi-download" severity="secondary" outlined @click="exportCsv" />
+        <Button label="Print / PDF" icon="pi pi-print" severity="secondary" outlined @click="printPage" />
+      </div>
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-1 border-b border-line flex-wrap">
+    <div class="flex gap-1 border-b border-line flex-wrap print:hidden">
       <button v-for="t in TABS" :key="t.k" type="button" class="px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-2"
         :class="tab === t.k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-ink'" @click="tab = t.k as typeof tab">
         <i :class="t.i" class="text-xs" />{{ t.l }}
@@ -103,7 +106,7 @@ const setRange = (n: number) => { from.value = daysAgo(n); to.value = today }
     </div>
 
     <!-- Filters -->
-    <div class="st-card !p-4 flex flex-wrap items-end gap-3">
+    <div class="st-card !p-4 flex flex-wrap items-end gap-3 print:hidden">
       <div class="flex flex-col gap-1">
         <label class="st-label">Class</label>
         <select v-model="classFilter" class="h-10 px-3 rounded-ctl bg-surface border border-line text-sm text-ink outline-none focus:border-accent min-w-[150px]">

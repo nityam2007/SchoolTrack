@@ -6,7 +6,7 @@ const auth = useAuthStore()
   <!-- Full-bleed app shell — the screen itself is the surface (no outer card
        frame), so dashboard widgets read as cards on the page, not cards inside
        a card. Sidebar is fixed; only the main content scrolls. -->
-  <div class="h-screen bg-card text-ink flex overflow-hidden">
+  <div class="h-screen bg-card text-ink flex overflow-hidden print:h-auto print:block print:overflow-visible">
     <ClientOnly>
       <AppSidebar v-if="auth.isAuthenticated" />
     </ClientOnly>
@@ -15,7 +15,7 @@ const auth = useAuthStore()
         <ViewAsBanner v-if="auth.isAuthenticated" />
         <AppTopNav v-if="auth.isAuthenticated" />
       </ClientOnly>
-      <main class="flex-1 px-5 lg:px-8 py-6 overflow-y-auto overflow-x-hidden">
+      <main class="flex-1 px-5 lg:px-8 py-6 overflow-y-auto overflow-x-hidden print:overflow-visible">
         <div class="max-w-[1320px] w-full mx-auto">
           <!-- Page content depends on the auth store, which is hydrated only on
                the client. Wrapping the slot in <ClientOnly> avoids SSR/CSR

@@ -56,11 +56,21 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'SchoolTrack',
+      title: 'SkoolTrack',
+      titleTemplate: '%s · SkoolTrack',
+      htmlAttrs: { lang: 'en' },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Multi-tenant SaaS attendance management for K-12 schools' },
+        { name: 'description', content: 'SkoolTrack — multi-tenant K-12 SaaS for attendance, report cards, and parent messaging. skooltrack.in' },
+        { name: 'application-name', content: 'SkoolTrack' },
+        { name: 'robots', content: 'index, follow' },
+        { property: 'og:site_name', content: 'SkoolTrack' },
+        { property: 'og:title', content: 'SkoolTrack — school attendance & report cards' },
+        { property: 'og:description', content: 'Attendance, report cards, and parent messaging for K-12 schools.' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: 'https://skooltrack.in' },
+        { name: 'twitter:card', content: 'summary_large_image' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },

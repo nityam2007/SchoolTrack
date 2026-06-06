@@ -32,7 +32,7 @@ const onLogout = async () => {
       </div>
       <div class="min-w-0">
         <span class="block font-bold font-display text-[16px] leading-tight tracking-tight text-ink truncate">
-          {{ schoolBrand?.name ?? 'SchoolTrack' }}
+          {{ schoolBrand?.name ?? 'SkoolTrack' }}
         </span>
         <span v-if="schoolBrand?.city" class="block text-[10px] text-muted leading-tight truncate">{{ schoolBrand.city }}</span>
       </div>
