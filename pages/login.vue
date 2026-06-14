@@ -75,7 +75,7 @@ const FEATURES = [
         </div>
       </div>
 
-      <div class="relative z-10 text-muted text-xs">Skool Track <span class="text-light font-medium">by Blu Studio</span> · © 2026</div>
+      <div class="relative z-10 text-muted text-xs">Skool Track <span class="text-light font-medium">by Blu Stdio</span> · © 2026</div>
     </section>
 
     <!-- Login form -->
@@ -134,7 +134,7 @@ const FEATURES = [
         </div>
 
         <p class="text-center text-[11px] text-muted mt-8 lg:hidden">
-          Skool Track <span class="text-light font-medium">by Blu Studio</span>
+          Skool Track <span class="text-light font-medium">by Blu Stdio</span>
         </p>
       </div>
     </section>

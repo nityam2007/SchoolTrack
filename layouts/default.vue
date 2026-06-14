@@ -34,7 +34,7 @@ const auth = useAuthStore()
         </div>
       </main>
       <footer class="shrink-0 border-t border-line px-5 lg:px-8 py-2.5 text-center text-[11px] text-muted print:hidden">
-        Skool Track <span class="text-light font-medium">by Blu Studio</span>
+        Skool Track <span class="text-light font-medium">by Blu Stdio</span>
       </footer>
     </div>
     <ClientOnly>
